@@ -1,0 +1,129 @@
+#+TITLE: INFIX-MATH
+#+AUTHOR: Paul M. Rodriguez
+#+EMAIL: pmr@ruricolist.com
+#+OPTIONS: toc:nil num:nil
+
+This is a familiar idea. We have all been using infix
+notation for mathematics since elementary school; despite the inherent
+advantages of sexps, =+ 2 2= will never be as natural as =2 + 2=. Thus a facility for infix math, in the spirit of =loop= and =format=, is desirable. This is one way of doing it: simple, Lispy, and extensible.
+
+Turn on infix expressions with =use-infix-math=. Once the read macro
+is in effect, group infix expressions with square brackets.
+
+#+begin_src lisp
+(infix-math:use-infix-math)
+
+[2 + 2] ;; => 4
+#+end_src lisp
+
+Note that you can mix Lisp and infix expressions freely.
+
+#+begin_src lisp
+[1 + (+ 2 3) + [4 + (+ 5 6 [7 + 8])] + 9] ;; => 45
+#+end_src
+
+To see the parse tree, quote the expression.
+
+#+begin_src lisp
+'[1 + (+ 2 3) + [4 + (+ 5 6 [7 + 8])] + 9]
+;; => (+ 1 2 3 4 5 6 7 8 9)
+#+end_src
+
+Comparison operators in infix expressions are chaining and
+short-circuiting.
+
+#+begin_src lisp
+[2 <= 2 > 1] ;; => T
+
+(defun explode () 'boom)
+
+(< 2 1 (explode)) ;; => BOOM
+
+[2 < 1 < (explode)] ;; => NIL
+
+[2 > 1 > (explode)] ;; => BOOM
+#+end_src
+
+=INFIX-MATH= knows about the following arithmetic, logical, bitwise
+and setwise operators, in descending order of precedence.
+
+#+begin_src lisp
+  '((expt)
+    (* / rem mod
+     floor ffloor
+     ceiling fceiling
+     truncate ftruncate
+     round fround
+     scale-float
+     gcd lcm atan)
+    (+ -)
+    (ash)
+    (logand logandc1 logandc2 lognand)
+    (logxor logeqv)
+    (logior logorc1 logorc2 lognor)
+    (min max)
+    (bit-and bit-andc1 bit-andc2 bit-nand)
+    (bit-xor bit-eqv)
+    (bit-ior bit-orc1 bit-orc2 bit-nor)
+    (intersection set-difference)
+    (set-exclusive-or)
+    (union)
+    (< <= > >= = =/)
+    (and)
+    (or)
+    (incf decf)
+    (progn))
+#+end_src
+
+(This roster and ordering are tentative and may change.)
+
+** Indentation in Emacs
+
+Emacs's =lisp-mode= does not recognize square brackets as delimiters.
+If you want legible indentation, add this to your init file.
+
+#+begin_src emacs-lisp
+(modify-syntax-entry ?\[ "(]" lisp-mode-syntax-table)
+(modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
+#+end_src
+
+* Extending
+
+To make another symbol an alias for an operator, use =declare-alias=.
+
+#+begin_src emacs-lisp
+(infix-math:declare-alias ^ expt)
+
+'[2 ^ 3 ^ 4] ;; => (expt 2 (expt 3 4))
+
+(infix-math:declare-alias & logand)
+
+'[2 & 3 & 4] ;; => (logand 2 3 4)
+#+end_src
+
+To turn a function into an operator, use
+=set-precedence-from-operator=, then =declare-right-associative=,
+=declare-associative=, and =declare-chaining= as appropriate.
+
+#+begin_src lisp
+(defun >> (x y) (ash x (- y)))
+
+(infix-math:set-precedence-from-operator '>> 'ash)
+
+[10 >> 2] ;; => 2
+#+end_src
+
+Using =declare-alias= as well you can change the meaning of built-in
+operators without overriding global function bindings. Suppose you
+have a generic function, =plus=, that handles both numbers and
+vectors. Here is how you could use =+= as an alias for =plus=:
+
+#+begin_src lisp
+(infix-math:set-precedence-from-operator 'plus '+)
+
+(infix-math:declare-associative plus)
+
+(infix-math:declare-alias + plus)
+
+'[2 + 2] ; => (plus 2 2)
+#+end_src
