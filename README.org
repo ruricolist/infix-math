@@ -5,7 +5,7 @@
 
 This is a familiar idea. We have all been using infix
 notation for mathematics since elementary school; despite the inherent
-advantages of sexps, =+ 2 2= will never be as natural as =2 + 2=. Thus a facility for infix math, in the spirit of =loop= and =format=, is desirable. This is one way of doing it: simple, Lispy, and extensible.
+advantages of sexps, =+ 2 2= will never be as natural as =2 + 2=. Thus a facility for infix math, in the spirit of =loop= and =format=, is desirable. This is one way of doing it: simple and extensible.
 
 Turn on infix expressions with =use-infix-math=. Once the read macro
 is in effect, group infix expressions with square brackets.
@@ -35,8 +35,6 @@ short-circuiting.
 #+begin_src lisp
 [2 <= 2 > 1] ;; => T
 
-(defun explode () 'boom)
-
 (< 2 1 (explode)) ;; => BOOM
 
 [2 < 1 < (explode)] ;; => NIL
@@ -47,33 +45,25 @@ short-circuiting.
 =INFIX-MATH= knows about the following arithmetic, logical, bitwise
 and setwise operators, in descending order of precedence.
 
-#+begin_src lisp
-  '((expt)
-    (* / rem mod
-     floor ffloor
-     ceiling fceiling
-     truncate ftruncate
-     round fround
-     scale-float
-     gcd lcm atan)
-    (+ -)
-    (ash)
-    (logand logandc1 logandc2 lognand)
-    (logxor logeqv)
-    (logior logorc1 logorc2 lognor)
-    (min max)
-    (bit-and bit-andc1 bit-andc2 bit-nand)
-    (bit-xor bit-eqv)
-    (bit-ior bit-orc1 bit-orc2 bit-nor)
-    (intersection set-difference)
-    (set-exclusive-or)
-    (union)
-    (< <= > >= = =/)
-    (and)
-    (or)
-    (incf decf)
-    (progn))
-#+end_src
+- expt
+- *, /, rem, mod, floor, ffloor, ceiling, fceiling, truncate, ftruncate, round, fround, scale,-float, gcd, lcm, atan
+- +, -
+- ash
+- logand, logandc1, logandc2, lognand
+- logxor, logeqv
+- logior, logorc1, logorc2, lognor
+- min, max
+- bit-and, bit-andc1, bit-andc2, bit-nand
+- bit-xor, bit-eqv
+- bit-ior, bit-orc1, bit-orc2, bit-nor
+- intersection, set-difference
+- set-exclusive-or
+- union
+- <, <=, >, >=, =, =/
+- and
+- or
+- incf, decf
+- progn
 
 (This roster and ordering are tentative and may change.)
 
@@ -84,6 +74,7 @@ If you want legible indentation, add this to your init file.
 
 #+begin_src emacs-lisp
 (modify-syntax-entry ?\[ "(]" lisp-mode-syntax-table)
+
 (modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
 #+end_src
 
@@ -101,9 +92,7 @@ To make another symbol an alias for an operator, use =declare-alias=.
 '[2 & 3 & 4] ;; => (logand 2 3 4)
 #+end_src
 
-To turn a function into an operator, use
-=set-precedence-from-operator=, then =declare-right-associative=,
-=declare-associative=, and =declare-chaining= as appropriate.
+To turn a function into an operator, use =set-precedence-from-operator=, then any of =declare-right-associative=, =declare-associative=, or =declare-chaining= which are appropriate.
 
 #+begin_src lisp
 (defun >> (x y) (ash x (- y)))
