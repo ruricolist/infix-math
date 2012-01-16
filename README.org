@@ -46,7 +46,7 @@ short-circuiting.
 and setwise operators, in descending order of precedence.
 
 - expt
-- *, /, rem, mod, floor, ffloor, ceiling, fceiling, truncate, ftruncate, round, fround, scale,-float, gcd, lcm, atan
+- *, /, rem, mod, floor, ffloor, ceiling, fceiling, truncate, ftruncate, round, fround, scale-float, gcd, lcm, atan
 - +, -
 - ash
 - logand, logandc1, logandc2, lognand
@@ -59,7 +59,7 @@ and setwise operators, in descending order of precedence.
 - intersection, set-difference
 - set-exclusive-or
 - union
-- <, <=, >, >=, =, =/
+- <, <=, >, >=, =, =/, subsetp
 - and
 - or
 - incf, decf
