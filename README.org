@@ -80,7 +80,7 @@ If you want legible indentation, add this to your init file.
 
 * Extending
 
-To make another symbol an alias for an operator, use =declare-alias=.
+To make another symbol an alias for an operator, use =declare-alias=. Aliases work only in the package where they are declared.
 
 #+begin_src emacs-lisp
 (infix-math:declare-alias ^ expt)
@@ -92,7 +92,7 @@ To make another symbol an alias for an operator, use =declare-alias=.
 '[2 & 3 & 4] ;; => (logand 2 3 4)
 #+end_src
 
-To turn a function into an operator, use =set-precedence-from-operator=, then any of =declare-right-associative=, =declare-associative=, or =declare-chaining= which are appropriate.
+To turn a function into an operator, use =set-precedence-from-operator=, then  =declare-right-associative=, =declare-associative=, or =declare-chaining= as appropriate.
 
 #+begin_src lisp
 (defun >> (x y) (ash x (- y)))

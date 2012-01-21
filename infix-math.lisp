@@ -47,13 +47,20 @@
       do (dolist (op level)
            (setf (get op 'level) i)))
 
+(defvar *aliases* (make-hash-table))
+
 (defun alias (operator)
   (declare (type symbol operator))
-  (or (get operator 'alias) operator))
+  (or (let ((ht (gethash *package* *aliases*)))
+        (when ht (gethash operator ht)))
+      operator))
 
 (defun (setf alias) (value operator)
   (declare (type symbol value operator))
-  (setf (get operator 'alias)
+  (setf (gethash operator
+                 (or (gethash *package* *aliases*)
+                     (setf (gethash *package* *aliases*)
+                           (make-hash-table))))
         ;; Prevent recursive aliases.
         (alias value)))
 
