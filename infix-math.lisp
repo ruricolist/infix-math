@@ -206,13 +206,12 @@ associative property."
                                    collect `(delay ,arg)))
          for x in list
          for y in (cdr list)
-         always (and (force x)
-                     (force y)
-                     (funcall ,op (force x) (force y)))
+         unless (funcall ,op (force x) (force y))
+           do (return-from chain nil)
          finally (return (force y))))
 
 (defmacro chain (op &rest args)
-  `(not (null (link ,op ,@args))))
+  `(block chain (link ,op ,@args) t))
 
 ;;; It's tempting to do additional transformations here, like
 ;;; short-circuiting multplication by 0, but that's best left to the
