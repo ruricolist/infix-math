@@ -2,9 +2,22 @@
 
 (in-package #:infix-math)
 
-(defparameter *basic-order-of-operations*
-  '((expt)
-    (* / rem mod
+(defparameter *use-exact-math* nil
+  "Should we use exact math?")
+
+(defmacro over (x y )
+  "Minimal-precedence version of / for writing fractions."
+  `(/ ,x ,y))
+
+(defmacro unary-negation (x y)
+  "Dummy macro for compiling unary negation."
+  (declare (ignore x))
+  `(- ,y))
+
+(defparameter *order-of-operations*
+  '((unary-negation)
+    (expt ^ log)
+    (* × / % ÷ rem mod
      floor ffloor
      ceiling fceiling
      truncate ftruncate
@@ -12,181 +25,160 @@
      scale-float
      gcd lcm atan)
     (+ -)
-    (ash)
-    (logand logandc1 logandc2 lognand)
+    (ash << >>)
+    (logand & logandc1 logandc2 lognand)
     (logxor logeqv)
     (logior logorc1 logorc2 lognor)
     (min max)
-    (bit-and bit-andc1 bit-andc2 bit-nand)
-    (bit-xor bit-eqv)
-    (bit-ior bit-orc1 bit-orc2 bit-nor)
-    (intersection set-difference)
-    (set-exclusive-or)
-    (union)
-    (< <= > >= = =/ subsetp)
-    (and)
-    (or)
-    (incf decf)
-    ;; Equivalent to C's , operator.
-    (progn))
+    (over))
   "Basic C-style operator precedence, with some differences.
 
    The use of MIN, MAX, GCD and LCM as infix operators is after
    Dijkstra (see EWD 1300). Perl 6 is also supposed to use them this
-   way, and I have adopted its precedence levels.
+   way, and I have adopted its precedence levels.")
 
-   Bitwise operators have a higher precedence than predicates. See
-   <http://cm.bell-labs.com/cm/cs/who/dmr/chist.html>, where Dennis
-   Ritchie considers C's ordering infelicitous.
+(defparameter *precedence*
+  (alexandria:alist-hash-table
+   (loop for i from 0
+         for level in *order-of-operations*
+         append (loop for op in level
+                      collect (cons op i))))
+  "Table of operator precedence.")
 
-   All predicates share the same level of precedence (as in Python) to
-   facilitate chaining.")
+(defplace precedence (operator)
+  (gethash operator *precedence*))
 
-(loop for i from 0
-      for level in *basic-order-of-operations*
-      do (dolist (op level)
-           (setf (get op 'level) i)))
+(defun operator-char? (c)
+  (not (or (alpha-char-p c)
+           (find c "-_"))))
 
-(defvar *aliases* (make-hash-table))
-
-(defun alias (operator)
-  (declare (type symbol operator))
-  (or (let ((ht (gethash *package* *aliases*)))
-        (when ht (gethash operator ht)))
-      operator))
-
-(defun (setf alias) (value operator)
-  (declare (type symbol value operator))
-  (setf (gethash operator
-                 (or (gethash *package* *aliases*)
-                     (setf (gethash *package* *aliases*)
-                           (make-hash-table))))
-        ;; Prevent recursive aliases.
-        (alias value)))
-
-(defmacro declare-alias (from to)
-  "Declare FROM as an alias for TO. Replace FROM with TO whenever it
-occurs in an infix expression.
-
-Note that declaring an alias is not sufficient to make TO a valid
-operator; only SET-PRECEDENCE-FROM-OPERATOR can do that."
-  `(setf (alias ',from) ',to))
+(defun looks-like-operator? (sym)
+  (let ((s (string sym)))
+    (and (> (length s) 0)
+         (every #'operator-char? s))))
 
 (defun operator? (operator)
-  (when (symbolp operator)
-    (get (alias operator) 'level)))
+  (and (symbolp operator)
+       (or (precedence operator)
+           (and (looks-like-operator? operator)
+                ;; Highest non-unary precedence.
+                1))))
 
-(defun built-in? (operator)
-  (declare (type symbol operator))
-  (get (alias operator) 'built-in))
-
-(defun precedence (operator)
-  (declare (type symbol operator))
-  (get (alias operator) 'level))
-
-(defun (setf precedence) (precedence operator)
-  (declare (type symbol operator)
-           (type integer precedence))
-  (setf (get (alias operator) 'level) precedence))
-
-(defun set-precedence-from-operator (to-operator from-operator)
-  "Make TO-OPERATOR an operator at the same level of precedence as
-FROM-OPERATOR."
-  (declare (type symbol to-operator from-operator))
-  (setf (precedence to-operator) (precedence from-operator))
-  to-operator)
+(defmacro declare-operator (new &key from precedence right-associative)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     ,@(if from
+           `((setf (precedence ',new) (precedence ',from))
+             (setf (right-associative? ',new)
+                   (or ,right-associative
+                       (right-associative ',from))))
+           `((setf (precedence ',new) ,precedence)
+             (setf (right-associative? ',new) ,right-associative)))))
 
 (defun precedence< (op1 op2)
-  (declare (type symbol op1 op2))
   (if (right-associative? op1)
       (> (precedence op1) (precedence op2))
       (>= (precedence op1) (precedence op2))))
 
 (defun precedence= (op1 op2)
-  (declare (type symbol op1 op2))
   (= (precedence op1) (precedence op2)))
 
-(defun chaining? (operator)
-  (get (alias operator) 'chaining))
-
-(defun (setf chaining?) (value operator)
-  (declare (type boolean value)
-           (type symbol operator))
-  (setf (get (alias operator) 'chaining) value))
-
-(defmacro declare-chaining (&rest operators)
-  "Declare OPERATORS to be chaining predicates, like < and =.
-
-Each operator should be a predicate of two arguments. The order of the
-arguments is important: if the predicate returns non-nil, it is the
-the second argument that is passed to the next link in the chain.
-
-It is not required but probably wise to give all predicates the same
-precedence, since operators only chain within levels."
-  (let ((op (gensym)))
-    `(dolist (,op ',operators)
-       (setf (chaining? ,op) t))))
-
-(declare-chaining > >= < <= = /= subsetp
-                  eq eql equal equalp)
-
 (defparameter *variadic*
-  '(+ * gcd lcm max min logand logxor logeqv logior and or progn)
+  '(+ * × gcd lcm max min logand logxor logeqv logior)
   "Built-in functions that take variable-length argument lists.
 
-   N.B. (+ x y z) does not imply (reduce #'+ x y z). Reduce always
-   works left-to-right, but in (+ x y z) the order of evaluation is
-   not guaranteed: the implementation may use any of several
-   strategies, with unpredictable results when the operands are of
-   varying precision (see 12.1.1.1.1). Preserving this behavior falls
-   under least surprise.")
+   N.B. (+ x y z) ≢ (reduce #'+ x y z). Reduce always works
+   left-to-right, but in (+ x y z) the order of evaluation is not
+   guaranteed: the implementation may use any of several strategies,
+   with unpredictable results when the operands are of varying
+   precision (see 12.1.1.1.1). Preserving this behavior falls under
+   least surprise.")
 
 (defun variadic? (operator)
-  (declare (type symbol operator))
-  (member (alias operator) *variadic*))
+  (member operator *variadic*))
+
+(defparameter *associative*
+  '(+ * gcd lcm max min logand logxor logeqv logior)
+  "Associative operators.")
 
 (defun associative? (operator)
-  (declare (type symbol operator))
-  (or (get (alias operator) 'associative)
-      ;; Chaining operators are trivially associative.
-      (chaining? operator)))
+  (member operator *associative*))
 
-(defun (setf associative?) (value operator)
-  (declare (type boolean value)
-           (type symbol operator))
-  (setf (get (alias operator) 'associative) value))
-
-(defmacro declare-associative (&rest operators)
-  "Declare OPERATORS to have the associative property (like addition
-and multiplication). Not to be confused with right-associatvity and
-DECLARE-RIGHT-ASSOCIATIVE."
-  (let ((op (gensym)))
-    `(dolist (,op ',operators)
-       (setf (associative? ,op) t))))
-
-(declare-associative + * gcd lcm max min
-                     logand logxor logeqv logior
-                     bit-and bit-xor bit-eqv bit-ior
-                     intersection set-exclusive-or union
-                     and or progn)
+(defparameter *right-associative*
+  '(expt ^ $$))
 
 (defun right-associative? (operator)
-  (get (alias operator) 'right-associative))
+  (member operator *right-associative*))
 
 (defun (setf right-associative?) (value operator)
-  (declare (type boolean value)
-           (type symbol operator))
-  (setf (get (alias operator) 'right-associative) value))
+  (check-type value boolean)
+  (if value
+      (pushnew operator *right-associative*)
+      (removef *right-associative* operator)))
 
-(defmacro declare-right-associative (&rest operators)
-  "Declare OPERATORS to be right associative (like exponentiation and
-assignment). Not to be confused with DECLARE-ASSOCIATIVE and the
-associative property."
-  (let ((op (gensym)))
-    `(dolist (,op ',operators)
-       (setf (right-associative? ,op) t))))
+(defun unary? (operator)
+  (eql operator '-))
 
-(declare-right-associative expt incf decf setf rotatef)
+;; Flattening associative operations is not strictly necessary, but it
+;; makes the output human-readable.
+
+(defun flatten-associative-ops (node)
+  (if *use-exact-math*
+      (destructuring-bind (op . children) node
+        (if (associative? op)
+            `(,op ,@(loop for child in children
+                          if (and (consp child)
+                                  (eql op (car child)))
+                            append (cdr child)
+                          else collect child))
+            node))
+      node))
+
+(defun transform (tree)
+  (if (atom tree)
+      tree
+      (destructuring-bind (op . args) tree
+        (cond ((eq op 'loop)
+               (cons op (mapcar #'transform args)))
+              ;; Operations that are associative but not variadic.
+              ((and (operator? op)
+                    (associative? op)
+                    (not (variadic? op))
+                    (nthcdr 2 args))
+               `(reduce
+                 (function ,op)
+                 ,(transform args)
+                 :from-end ,(right-associative? op)))
+              (t
+               (cons (transform (car tree))
+                     (transform (cdr tree))))))))
+
+(defun make-node (tree operator)
+  (destructuring-bind (x y . rest) tree
+    (cons (flatten-associative-ops
+           (list operator y x))
+          rest)))
+
+(define-modify-macro nodef (operator) make-node)
+
+(defun shunting-yard (expression &aux tree stack)
+  (let ((last-token :start))
+    (dolist (token expression)
+      (if (operator? token)
+          (progn
+            (when (and (unary? token)
+                       (or (eq last-token :start)
+                           (operator? last-token)))
+              (push 'dummy tree)
+              (setf token 'unary-negation))
+            (loop while (and stack (precedence< token (car stack)))
+                  do (nodef tree (pop stack))
+                  finally (push token stack)))
+          (push token tree))
+      (setf last-token token)))
+  (when stack
+    (dolist (op stack)
+      (nodef tree op)))
+  (flatten-associative-ops (car tree)))
 
 (defun valid? (expression)
   ;; Test in ascending order of expense.
@@ -199,109 +191,125 @@ associative property."
                         (operator? elt)
                         (not (operator? elt))))))
 
-(defmacro delay (exp)
-  (let ((value (gensym)))
-    `(let (,value)
-       (lambda ()
-         (or ,value (setf ,value ,exp))))))
-
-(defun force (thunk)
-  (funcall thunk))
-
-(defmacro link (op &rest args)
-  `(loop with list = (list ,@(loop for arg in args
-                                   collect `(delay ,arg)))
-         for x in list
-         for y in (cdr list)
-         unless (funcall ,op (force x) (force y))
-           do (return-from chain nil)
-         finally (return (force y))))
-
-(defmacro chain (op &rest args)
-  `(block chain (link ,op ,@args) t))
-
-;;; It's tempting to do additional transformations here, like
-;;; short-circuiting multplication by 0, but that's best left to the
-;;; compiler.
-
-(defun transform (tree &key chain)
-  (if (atom tree)
-      tree
-      (destructuring-bind (op . args) tree
-        (or (when (eql 'chain op)
-              ;; The tree has already been transformed. At the moment,
-              ;; [x < [y < z]] gives an error; would treating it the
-              ;; same as [x < y < z] be better?
-              tree)
-            (or (when (and (operator? op) (associative? op))
-                  (or (when (chaining? op)
-                        (list* (if chain 'link 'chain)
-                               `(function ,op)
-                               (transform args :chain t)))
-                      ;; If an operator is associative, but not known
-                      ;; to be variadic, use REDUCE. It is not
-                      ;; strictly necessary, but it makes the
-                      ;; expansion more readable.
-                      (when (and (not (variadic? op))
-                                 ;; More than two args.
-                                 (cddr args))
-                        (list* 'reduce
-                               `(function ,op)
-                               (transform args :chain chain)
-                               (when (right-associative? op)
-                                 '(:from-end t))))))
-                (cons (transform (car tree) :chain chain)
-                      (transform (cdr tree) :chain chain)))))))
-
-(defun flatten-associative-ops (node)
-  (destructuring-bind (op . children) node
-    (if (associative? op)
-        (cons op (loop for child in children
-                       if (and (consp child)
-                               (eql op (car child)))
-                         append (cdr child)
-                       else collect child))
-        node)))
-
-(defun make-node (tree operator)
-  (destructuring-bind (x y . rest) tree
-    (cons (flatten-associative-ops
-           (list (alias operator) y x))
-          rest)))
-
-(define-modify-macro nodef (operator) make-node)
-
-(defun shunting-yard (expression &aux tree stack)
-  (assert (valid? expression)
-          (expression)
-          "~S is not a valid infix expression"
-          expression)
-  (dolist (token expression)
-    (if (operator? token)
-        (loop while (and stack (precedence< token (car stack)))
-              do (nodef tree (pop stack))
-              finally (push token stack))
-        (push token tree)))
-  (when stack
-    (dolist (op stack)
-      (nodef tree op)))
-  (flatten-associative-ops (car tree)))
-
 (defun parse-expression (expression)
   (when expression
-    (transform (shunting-yard expression))))
+    (transform
+     (shunting-yard expression))))
 
-(defun make-bracket-reader (close)
-  (lambda (stream char)
-    (declare (ignore char))
-    (parse-expression (read-delimited-list close stream t))))
+(defun eliminate-common-subexpressions (form &optional env)
+  (declare (ignore env))
+  (local
+    (def exprs (dict))
 
-(defun extend-readtable (readtable open close)
-  (set-macro-character open (make-bracket-reader close) nil readtable)
-  (set-macro-character close (get-macro-character #\)) nil readtable)
-  readtable)
+    ;; TODO Expand symbol macros, but without shadowing functions
+    ;; which are also the names of symbol macros. (Maybe use
+    ;; macroexpand-dammit?).
+    (defun rec (tree)
+      (when (listp tree)
+        (let ((count (incf (gethash tree exprs 0))))
+          ;; No subexps of subexps.
+          (when (and (listp tree) (= count 1))
+            (mapcar #'rec tree)))))
 
-(defun use-infix-math (&optional open close)
-  "Extend the current readtable to use OPEN and CLOSE as delimiters
-for infix expressions. Default to square brackets."
-  (extend-readtable *readtable* (or open #\[) (or close #\])))
+    (rec form)
+
+    (def repeats
+      (mapcar #'car
+              (filter (op (> (cdr _) 1))
+                      (hash-table-alist exprs))))
+
+    (def gensyms
+      (make-gensym-list (length repeats) (string 'subexp)))
+
+    (if repeats
+        `(let ,(mapcar #'list gensyms repeats)
+           ,(sublis (mapcar #'cons repeats gensyms) form
+                    :test #'equal))
+        form)))
+
+(defun expand-expression (exprs)
+  (mapcar
+   (lambda (expr)
+     (cond ((atom expr)
+            expr)
+           ((operator? (second expr))
+            (parse-expression (expand-expression expr)))
+           ;; E.g. (- x * y), (gamma x - y)
+           ((operator? (third expr))
+            (cons (first expr)
+                  (~> expr
+                      rest
+                      expand-expression
+                      parse-expression
+                      list)))
+           (t (expand-expression expr))))
+   exprs))
+
+(defun expand-fancy-symbols (form)
+  "Expand -x into (- x) and 2x into (* 2 x).
+Only integers are allowed as literal coefficients.
+
+Literal coefficients have the same precedence as unary operators.
+
+Literal coefficients are assumed to be in base 10."
+  (labels ((expand-symbol (sym)
+             (let ((package (symbol-package sym))
+                   (str (string sym)))
+               (cond ((< (length str) 2) sym)
+                     ;; Replace a series of dashes or underscores with
+                     ;; `over'.
+                     ((or (every (op (eql #\- _)) str)
+                          (every (op (eql #\_ _)) str))
+                      'over)
+                     (t (multiple-value-bind (leading-int end)
+                            (parse-integer str :junk-allowed t :radix 10)
+                          (cond (leading-int
+                                 (let* ((name (subseq str end))
+                                        (sym2 (intern name package)))
+                                   `(* ,leading-int ,sym2)))
+                                ((string^= "-" str)
+                                 (let* ((name (subseq str 1))
+                                        (sym2 (intern name package)))
+                                   `(- ,sym2)))
+                                ((string^= "!" str)
+                                 (let* ((name (subseq str 1))
+                                        (sym2 (intern name package)))
+                                   `(! ,sym2)))
+                                ((string^= "√" str)
+                                 (let* ((name (subseq str 1))
+                                        (sym2 (intern name package)))
+                                   `(sqrt ,sym2)))
+                                (t sym)))))))
+           (rec (form)
+             (if (atom form)
+                 (if (symbolp form)
+                     (expand-symbol form)
+                     form)
+                 (cons (rec (car form))
+                       (rec (cdr form))))))
+    (rec form)))
+
+(defmacro $ (&rest form &environment env)
+  "Compile an infix math expression, recursively.
+
+One notable feature: handles expressions like (exp 2 - 1), so
+it (almost) never needs more parentheses that would be required in an
+infix language. (The exception is a leading unary negation: that still
+requires parentheses.)
+
+Another notable feature: you can negate a variable by writing it with a leading dash:
+
+     ($ -x) => (- x)
+
+You can also write a variable with a literal coefficient:
+
+     ($ 2x) => (* 2 x)
+
+Note that literal coefficients have higher priority than binary operations:
+
+     (let ((x 3)) ($ 2 ^ 2x)) => 64"
+  (~> form
+      expand-fancy-symbols
+      expand-expression
+      parse-expression
+      (eliminate-common-subexpressions env)))

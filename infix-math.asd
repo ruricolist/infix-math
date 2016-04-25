@@ -5,5 +5,6 @@
   :description "An extensible infix syntax for math in Common Lisp."
   :license "MIT"
   :serial t
+  :depends-on (:serapeum)
   :components ((:file "package")
                (:file "infix-math")))
