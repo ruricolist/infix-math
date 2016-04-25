@@ -7,4 +7,5 @@
   :serial t
   :depends-on (:serapeum)
   :components ((:file "package")
+               (:file "symbols")
                (:file "infix-math")))
