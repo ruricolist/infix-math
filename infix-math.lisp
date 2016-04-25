@@ -1,5 +1,10 @@
 ;;;; infix-math.lisp
 
+(defpackage #:infix-math/infix-math
+  (:nicknames :infix-math)
+  (:use #:cl :infix-math/symbols :alexandria :serapeum)
+  (:export :$ :declare-operator :over :^))
+
 (in-package #:infix-math)
 
 (defparameter *use-exact-math* nil

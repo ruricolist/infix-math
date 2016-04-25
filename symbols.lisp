@@ -1,3 +1,12 @@
+(defpackage :infix-math-symbols
+  (:use :cl)
+  (:export
+   :^
+   :! :√
+   :× :% :÷
+   :<< :>>
+   :&))
+
 (in-package :infix-math-symbols)
 
 (defmacro unary-operator (new old)
@@ -31,14 +40,14 @@
 
 
 (unary-operators
- ;; ! factorial
- √ sqrt)
+  ;; ! factorial
+  √ sqrt)
 
 (binary-operators
- ^ expt
- × *
- ÷ rem
- % rem
- << ash
- >> ash-
- & logand)
+  ^ expt
+  × *
+  ÷ rem
+  % rem
+  << ash
+  >> ash-
+  & logand)
