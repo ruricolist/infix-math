@@ -1,11 +1,12 @@
-(defpackage :infix-math-symbols
+(defpackage :infix-math/symbols
   (:use :cl)
   (:export
    :^
    :! :√
    :× :% :÷
    :<< :>>
-   :&))
+   :&
+   :over))
 
 (in-package :infix-math-symbols)
 
@@ -50,4 +51,5 @@
   % rem
   << ash
   >> ash-
-  & logand)
+  & logand
+  over /)

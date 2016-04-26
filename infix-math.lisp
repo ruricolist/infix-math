@@ -2,17 +2,17 @@
 
 (defpackage #:infix-math/infix-math
   (:nicknames :infix-math)
-  (:use #:cl :infix-math/symbols :alexandria :serapeum)
+  (:use #:cl
+   :alexandria
+   :serapeum
+   :infix-math/symbols
+   :infix-math/unstable)
   (:export :$ :declare-operator :over :^))
 
 (in-package #:infix-math)
 
 (defparameter *use-exact-math* nil
   "Should we use exact math?")
-
-(defmacro over (x y )
-  "Minimal-precedence version of / for writing fractions."
-  `(/ ,x ,y))
 
 (defmacro unary-negation (x y)
   "Dummy macro for compiling unary negation."
@@ -317,4 +317,5 @@ Note that literal coefficients have higher priority than binary operations:
       expand-fancy-symbols
       expand-expression
       parse-expression
+      rewrite-unstable-expressions
       (eliminate-common-subexpressions env)))
