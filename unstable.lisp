@@ -1,5 +1,5 @@
 (defpackage :infix-math/unstable
-  (:use :cl :infix-math/contractions :optima)
+  (:use :cl :floating-point-contractions :optima)
   (:import-from :serapeum :~>>)
   (:import-from :infix-math/symbols :^ :over)
   (:import-from :fare-quasiquote)
@@ -19,6 +19,16 @@
 (defpattern = (x)
   (let ((it (gensym (string 'it))))
     `(guard ,it (cl:= ,it ,x))))
+
+;;; http://www.cliki.net/EXPT-MOD
+(defun expt-mod (n exponent modulus)
+  "As (mod (expt n exponent) modulus), but more efficient."
+  (loop with result = 1
+        for i of-type fixnum from 0 below (integer-length exponent)
+        for sqr = n then (mod (* sqr sqr) modulus)
+        when (logbitp i exponent) do
+          (setf result (mod (* result sqr) modulus))
+        finally (return result)))
 
 (defun rewrite (form)
   "If FORM is recognized as a numerically unstable expression, rewrite
