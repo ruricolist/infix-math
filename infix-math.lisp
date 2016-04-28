@@ -48,51 +48,6 @@
    Dijkstra (see EWD 1300). Perl 6 is also supposed to use them this
    way, and I have adopted its precedence levels.")
 
-(defparameter *precedence*
-  (alexandria:alist-hash-table
-   (loop for i from 0
-         for level in *order-of-operations*
-         append (loop for op in level
-                      collect (cons op i))))
-  "Table of operator precedence.")
-
-(defplace precedence (operator)
-  (gethash operator *precedence*))
-
-(defun operator-char? (c)
-  (not (or (alpha-char-p c)
-           (find c "-_"))))
-
-(defun looks-like-operator? (sym)
-  (let ((s (string sym)))
-    (and (> (length s) 0)
-         (every #'operator-char? s))))
-
-(defun operator? (operator)
-  (and (symbolp operator)
-       (or (precedence operator)
-           (and (looks-like-operator? operator)
-                ;; Highest non-unary precedence.
-                1))))
-
-(defmacro declare-operator (new &key from precedence right-associative)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     ,@(if from
-           `((setf (precedence ',new) (precedence ',from))
-             (setf (right-associative? ',new)
-                   (or ,right-associative
-                       (right-associative ',from))))
-           `((setf (precedence ',new) ,precedence)
-             (setf (right-associative? ',new) ,right-associative)))))
-
-(defun precedence< (op1 op2)
-  (if (right-associative? op1)
-      (> (precedence op1) (precedence op2))
-      (>= (precedence op1) (precedence op2))))
-
-(defun precedence= (op1 op2)
-  (= (precedence op1) (precedence op2)))
-
 (defparameter *variadic*
   '(+ * × gcd lcm max min logand logxor logeqv logior)
   "Built-in functions that take variable-length argument lists.
@@ -104,26 +59,98 @@
    precision (see 12.1.1.1.1). Preserving this behavior falls under
    least surprise.")
 
-(defun variadic? (operator)
-  (member operator *variadic*))
-
 (defparameter *associative*
   '(+ * gcd lcm max min logand logxor logeqv logior)
   "Associative operators.")
 
+(defparameter *right-associative*
+  '(expt ^ $$))
+
+(defparameter *precedence*
+  (alexandria:alist-hash-table
+   (loop for i from 0
+         for level in *order-of-operations*
+         append (loop for op in level
+                      collect (cons op i))))
+  "Table of operator precedence.")
+
+(defun precedence (operator)
+  (gethash (assure operator operator) *precedence*))
+
+(defun (setf precedence) (value operator)
+  (setf (gethash (assure operator operator) *precedence*)
+        (assure precedence value)))
+
+(defun operator-char? (c)
+  (not (or (alpha-char-p c)
+           (find c "-_"))))
+
+(defun looks-like-operator? (sym)
+  "Does SYM start and end with an operator char?"
+  (let ((s (string sym)))
+    (and (> (length s) 0)
+         (operator-char? (aref s 0))
+         (operator-char? (aref s (1- (length s)))))))
+
+(defun operator? (operator)
+  (and (typep operator 'operator)
+       (or (precedence operator)
+           (and (looks-like-operator? operator)
+                ;; Highest non-unary precedence.
+                1))))
+
+(defun save-operator (&key name precedence associative right-associative)
+  (setf (precedence name) precedence
+        (associative? name) associative
+        (right-associative? name) right-associative)
+  name)
+
+(defun copy-operator (from to)
+  (save-operator :name to
+                 :precedence (precedence from)
+                 :right-associative (right-associative? from)
+                 :associative (associative? from)))
+
+(defmacro declare-operator (new &key from precedence associative right-associative)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     ,@(if from
+           `(copy-operator ',from ',new)
+           `(save-operator
+             :name ',new
+             :precedence ,precedence
+             :associative ,associative
+             :right-associative ,right-associative))))
+
+(defun precedence< (op1 op2)
+  (if (right-associative? op1)
+      (> (precedence op1) (precedence op2))
+      (>= (precedence op1) (precedence op2))))
+
+(defun precedence= (op1 op2)
+  (= (precedence op1) (precedence op2)))
+
+(defun variadic? (operator)
+  (member operator *variadic*))
+
+(defun (setf variadic?) (value operator)
+  (if value
+      (pushnew (assure operator operator) *variadic*)
+      (removef *variadic* operator)))
+
 (defun associative? (operator)
   (member operator *associative*))
 
-(defparameter *right-associative*
-  '(expt ^ $$))
+(defun (setf associative?) (value operator)
+  (if value
+      (pushnew (assure operator operator) *associative*)
+      (removef *associative* operator)))
 
 (defun right-associative? (operator)
   (member operator *right-associative*))
 
 (defun (setf right-associative?) (value operator)
-  (check-type value boolean)
   (if value
-      (pushnew operator *right-associative*)
+      (pushnew (assure operator operator) *right-associative*)
       (removef *right-associative* operator)))
 
 (defun unary? (operator)
