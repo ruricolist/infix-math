@@ -11,6 +11,12 @@
 
 (in-package #:infix-math)
 
+(deftype operator ()
+  'symbol)
+
+(deftype precedence ()
+  '(or (real 0 *) null))
+
 (defparameter *use-exact-math* nil
   "Should we use exact math?")
 
