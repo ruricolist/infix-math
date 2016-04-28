@@ -8,7 +8,7 @@
    :&
    :over))
 
-(in-package :infix-math-symbols)
+(in-package :infix-math/symbols)
 
 (defmacro unary-operator (new old)
   `(progn
