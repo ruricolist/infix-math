@@ -6,120 +6,14 @@
    :alexandria
    :serapeum
    :infix-math/symbols
-   :infix-math/unstable)
+   :infix-math/unstable
+   :infix-math/data)
   (:export :$ :declare-operator :over :^))
 
 (in-package #:infix-math)
 
-(deftype operator ()
-  'symbol)
-
-(deftype precedence ()
-  '(or (real 0 *) null))
-
 (defparameter *use-exact-math* nil
   "Should we use exact math?")
-
-(defmacro unary-negation (x y)
-  "Dummy macro for compiling unary negation."
-  (declare (ignore x))
-  `(- ,y))
-
-(defparameter *order-of-operations*
-  '((unary-negation)
-    (expt ^ log)
-    (* × / % ÷ rem mod
-     floor ffloor
-     ceiling fceiling
-     truncate ftruncate
-     round fround
-     scale-float
-     gcd lcm atan)
-    (+ -)
-    (ash << >>)
-    (logand & logandc1 logandc2 lognand)
-    (logxor logeqv)
-    (logior logorc1 logorc2 lognor)
-    (min max)
-    (over))
-  "Basic C-style operator precedence, with some differences.
-
-   The use of MIN, MAX, GCD and LCM as infix operators is after
-   Dijkstra (see EWD 1300). Perl 6 is also supposed to use them this
-   way, and I have adopted its precedence levels.")
-
-(defparameter *variadic*
-  '(+ * × gcd lcm max min logand logxor logeqv logior)
-  "Built-in functions that take variable-length argument lists.
-
-   N.B. (+ x y z) ≢ (reduce #'+ x y z). Reduce always works
-   left-to-right, but in (+ x y z) the order of evaluation is not
-   guaranteed: the implementation may use any of several strategies,
-   with unpredictable results when the operands are of varying
-   precision (see 12.1.1.1.1). Preserving this behavior falls under
-   least surprise.")
-
-(defparameter *associative*
-  '(+ * gcd lcm max min logand logxor logeqv logior)
-  "Associative operators.")
-
-(defparameter *right-associative*
-  '(expt ^ $$))
-
-(defparameter *precedence*
-  (alexandria:alist-hash-table
-   (loop for i from 0
-         for level in *order-of-operations*
-         append (loop for op in level
-                      collect (cons op i))))
-  "Table of operator precedence.")
-
-(defun precedence (operator)
-  (gethash (assure operator operator) *precedence*))
-
-(defun (setf precedence) (value operator)
-  (setf (gethash (assure operator operator) *precedence*)
-        (assure precedence value)))
-
-(defun operator-char? (c)
-  (not (or (alpha-char-p c)
-           (find c "-_"))))
-
-(defun looks-like-operator? (sym)
-  "Does SYM start and end with an operator char?"
-  (let ((s (string sym)))
-    (and (> (length s) 0)
-         (operator-char? (aref s 0))
-         (operator-char? (aref s (1- (length s)))))))
-
-(defun operator? (operator)
-  (and (typep operator 'operator)
-       (or (precedence operator)
-           (and (looks-like-operator? operator)
-                ;; Highest non-unary precedence.
-                1))))
-
-(defun save-operator (&key name precedence associative right-associative)
-  (setf (precedence name) precedence
-        (associative? name) associative
-        (right-associative? name) right-associative)
-  name)
-
-(defun copy-operator (from to)
-  (save-operator :name to
-                 :precedence (precedence from)
-                 :right-associative (right-associative? from)
-                 :associative (associative? from)))
-
-(defmacro declare-operator (new &key from precedence associative right-associative)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     ,@(if from
-           `(copy-operator ',from ',new)
-           `(save-operator
-             :name ',new
-             :precedence ,precedence
-             :associative ,associative
-             :right-associative ,right-associative))))
 
 (defun precedence< (op1 op2)
   (if (right-associative? op1)
@@ -128,33 +22,6 @@
 
 (defun precedence= (op1 op2)
   (= (precedence op1) (precedence op2)))
-
-(defun variadic? (operator)
-  (member operator *variadic*))
-
-(defun (setf variadic?) (value operator)
-  (if value
-      (pushnew (assure operator operator) *variadic*)
-      (removef *variadic* operator)))
-
-(defun associative? (operator)
-  (member operator *associative*))
-
-(defun (setf associative?) (value operator)
-  (if value
-      (pushnew (assure operator operator) *associative*)
-      (removef *associative* operator)))
-
-(defun right-associative? (operator)
-  (member operator *right-associative*))
-
-(defun (setf right-associative?) (value operator)
-  (if value
-      (pushnew (assure operator operator) *right-associative*)
-      (removef *right-associative* operator)))
-
-(defun unary? (operator)
-  (eql operator '-))
 
 ;; Flattening associative operations is not strictly necessary, but it
 ;; makes the output human-readable.
@@ -191,10 +58,11 @@
                      (transform (cdr tree))))))))
 
 (defun make-node (tree operator)
-  (destructuring-bind (x y . rest) tree
-    (cons (flatten-associative-ops
-           (list operator y x))
-          rest)))
+  (let ((operator (trim-dotted-operator operator)))
+    (destructuring-bind (x y . rest) tree
+      (cons (flatten-associative-ops
+             (list operator y x))
+            rest))))
 
 (define-modify-macro nodef (operator) make-node)
 
