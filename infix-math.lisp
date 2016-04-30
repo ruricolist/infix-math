@@ -6,14 +6,10 @@
    :alexandria
    :serapeum
    :infix-math/symbols
-   :infix-math/unstable
    :infix-math/data)
   (:export :$ :declare-operator :over :^))
 
 (in-package #:infix-math)
-
-(defparameter *use-exact-math* nil
-  "Should we use exact math?")
 
 (defun precedence< (op1 op2)
   (if (right-associative? op1)
@@ -23,47 +19,10 @@
 (defun precedence= (op1 op2)
   (= (precedence op1) (precedence op2)))
 
-;; Flattening associative operations is not strictly necessary, but it
-;; makes the output human-readable.
-
-(defun flatten-associative-ops (node)
-  (if *use-exact-math*
-      (destructuring-bind (op . children) node
-        (if (and (associative? op)
-                 (variadic? op))
-            `(,op ,@(loop for child in children
-                          if (and (consp child)
-                                  (eql op (car child)))
-                            append (cdr child)
-                          else collect child))
-            node))
-      node))
-
-(defun transform (tree)
-  (if (atom tree)
-      tree
-      (destructuring-bind (op . args) tree
-        (cond ((eq op 'loop)
-               (cons op (mapcar #'transform args)))
-              ;; Operations that are associative but not variadic.
-              ((and (operator? op)
-                    (associative? op)
-                    (not (variadic? op))
-                    (nthcdr 2 args))
-               `(reduce
-                 (function ,op)
-                 ,(transform args)
-                 :from-end ,(right-associative? op)))
-              (t
-               (cons (transform (car tree))
-                     (transform (cdr tree))))))))
-
 (defun make-node (tree operator)
   (let ((operator (trim-dotted-operator operator)))
     (destructuring-bind (x y . rest) tree
-      (cons (flatten-associative-ops
-             (list operator y x))
-            rest))))
+      (cons (list operator y x) rest))))
 
 (define-modify-macro nodef (operator) make-node)
 
@@ -85,7 +44,7 @@
   (when stack
     (dolist (op stack)
       (nodef tree op)))
-  (flatten-associative-ops (car tree)))
+  (car tree))
 
 (defun valid? (expression)
   ;; Test in ascending order of expense.
@@ -100,8 +59,7 @@
 
 (defun parse-expression (expression)
   (when expression
-    (transform
-     (shunting-yard expression))))
+    (shunting-yard expression)))
 
 (defun eliminate-common-subexpressions (form &optional env)
   (declare (ignore env))
@@ -219,5 +177,4 @@ Note that literal coefficients have higher priority than binary operations:
       expand-fancy-symbols
       expand-expression
       parse-expression
-      rewrite-unstable-expressions
       (eliminate-common-subexpressions env)))

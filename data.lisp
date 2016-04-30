@@ -9,9 +9,7 @@
    :operator?
    :trim-dotted-operator
    :precedence
-   :associative?
    :unary?
-   :variadic?
    :right-associative?
    :declare-operator))
 
@@ -60,10 +58,6 @@
    with unpredictable results when the operands are of varying
    precision (see 12.1.1.1.1). Preserving this behavior falls under
    least surprise.")
-
-(defvar *associative*
-  '(+ * × gcd lcm max min logand logxor logeqv logior)
-  "Associative operators.")
 
 (defvar *right-associative*
   '(expt ^ $$))
@@ -116,24 +110,29 @@
   (setf (gethash (assure operator operator) *precedence*)
         (assure precedence value)))
 
-(defun save-operator (&key name precedence associative right-associative)
-  (setf (precedence name) precedence
-        (associative? name) associative
-        (right-associative? name) right-associative)
-  name)
+(defun save-operator (name
+                      &key from
+                           (right-associative
+                            (right-associative? from)))
+  (if (unary? from)
+      (progn
+        (when right-associative
+          (error "~a cannot be associative and unary." name))
+        (setf (precedence name) 0
+              (unary? name) t))
+      (setf (precedence name) (precedence from)
+            (right-associative? name) right-associative)))
 
-(defmacro declare-operator (new &key
-                                  (from (required-argument 'from))
-                                  (associative `(associative? ',from))
-                                  (variadic `(variadic? ',from))
-                                  (right-associative `(right-associative? ',from)))
+(defmacro declare-operator (new &body
+                                  (&key
+                                     from
+                                     (right-associative `(right-associative? ',from))))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (save-operator
-      :name ',new
-      :precedence (precedence ',from)
-      :associative ,associative
-      :right-associative ,right-associative
-      :variadic ,variadic)))
+     ,(once-only (right-associative)
+        `(save-operator
+          :name ',new
+          :from ',from
+          :right-associative ,right-associative))))
 
 (defun variadic? (operator)
   (member operator *variadic*))
