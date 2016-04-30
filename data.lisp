@@ -5,7 +5,7 @@
    :serapeum
    :infix-math/symbols)
   (:export
-   :unary-negation
+   :unary
    :operator?
    :trim-dotted-operator
    :precedence
@@ -23,13 +23,12 @@
 (deftype precedence ()
   '(or (real 0 *) null))
 
-(defmacro unary-negation (x y)
-  "Dummy macro for compiling unary negation."
-  (declare (ignore x))
-  `(- ,y))
+(defmacro unary (op arg)
+  "Pretend unary operators are binary operators."
+  `(,op ,arg))
 
 (defparameter *order-of-operations*
-  '((unary-negation)
+  '((unary)
     (expt ^ log)
     (* × / % ÷ rem mod
      floor ffloor
@@ -111,8 +110,7 @@
 (defun precedence (operator)
   (or (gethash (assure operator operator) *precedence*)
       (and (looks-like-operator? operator)
-           ;; highest non-unary precedence
-           1)))
+           (1+ (precedence 'unary)))))
 
 (defun (setf precedence) (value operator)
   (setf (gethash (assure operator operator) *precedence*)
@@ -161,5 +159,13 @@
       (pushnew (assure operator operator) *right-associative*)
       (removef *right-associative* operator)))
 
+(defvar *unary*
+  '(- √))
+
 (defun unary? (operator)
-  (eql operator '-))
+  (member operator *unary*))
+
+(defun (setf unary?) (value operator)
+  (if value
+      (pushnew operator *unary*)
+      (removef *unary* operator)))
