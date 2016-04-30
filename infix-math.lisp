@@ -29,7 +29,8 @@
 (defun flatten-associative-ops (node)
   (if *use-exact-math*
       (destructuring-bind (op . children) node
-        (if (associative? op)
+        (if (and (associative? op)
+                 (variadic? op))
             `(,op ,@(loop for child in children
                           if (and (consp child)
                                   (eql op (car child)))
