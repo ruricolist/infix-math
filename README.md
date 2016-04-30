@@ -1,0 +1,151 @@
+# Infix-Math
+
+Infix-Math is a library that provides a special syntax for
+transcribing mathematical formulas into Lisp. Bitter experience has
+taught me that the more the formula on screen resembles the formula on
+paper, the better. The more the formula on screen resembles the
+formula on paper, the easier it is to prevent bugs from transcription
+errors, and the easier it is to trace the source of any bugs that do
+occur – because sometimes the formula is wrong.
+
+Having to transcribe formulas from crooked, blurry scans of ancient
+pre-LaTeX typescripts is bad enough without having to parse operator
+precedence and do common subexpression elimination in your head.
+
+## Examples
+
+The macro `$` is the entry point into Infix-Math.
+
+    ($ 2 + 2) => 4
+    ($ 1 + 2 * 3) => 7
+    
+Infix-Math knows about the following arithmetic and bitwise operators,
+in descending order of precedence.
+
+- unary -, sqrt
+- expt, log
+- *, /, rem, mod, floor, ffloor, ceiling, fceiling, truncate,
+  ftruncate, round, fround, scale-float, gcd, lcm, atan
+- +, -
+- ash
+- logand, logandc1, logandc2, lognand
+- logxor, logeqv
+- logior, logorc1, logorc2, lognor
+- min, max
+- over
+
+Sadly, I need to say explicitly that operator precedence parsing in
+Infix-Math is reliable – it uses Dijkstra’s [shunting yard][]
+algorithm.
+
+Operations at the same level of precedence are always evaluated
+left-to-right.
+
+    (+ 0.1d0 (+ 0.2d0 0.3d0)) => 0.6d0
+    (+ (+ 0.1d0 0.2d0) 0.3d0) => 0.6000000000000001D0
+    ($ 0.1d0 + 0.2d0 + 0.3d0) => 0.6000000000000001D0
+    
+Parentheses can be used for grouping.
+
+    ($ 0.1d0 + (0.2d0 + 0.3d0)) => 0.6d0
+    
+Infix-Math exports just four symbols: `$`, `^`, `over`, and
+`declare-operator`.
+
+(If you want more math symbols, the package `infix-math/symbols`
+provides a few more.)
+
+The symbol `^` is just a shorthand for `expt`.
+
+    ($ 1 + 2 * 3 ^ 4) => 163
+
+The symbol `over` represents the same operation as `/`, but at a much
+lower priority. Using `over` lets you avoid introducing parentheses
+for grouping when transcribing fractions.
+
+    (setf x 5)
+    ($ x * 2 / x * 3)     => 6
+    ($ (x * 2) / (x * 3)) => 2/3
+    ($ x * 2 over x * 3)  => 2/3
+
+You can also spell `over` with a series of dashes or underscores.
+
+    ($ x * 2
+       -----
+       x * 3)
+    => 2/3
+    
+Variables can be written with literal numbers as coefficients.
+
+    ($ 2x) => 10
+    ($ -2x) => 10
+    
+Literal coefficients have very high priority.
+
+    ($ 2 ^ 2x) => 1024
+    
+A literal coefficient of 1 can be omitted.
+
+    ($ -x) ≡ (- x)
+    
+Literal coefficients are parsed as decimals, rather than floats.
+
+    ($ 1.5x) ≡ (* 3/2 x)
+    
+(The idea for literal coefficients comes from Julia.)
+    
+Common subexpression elimination in infix-math is automatic and
+aggressive, since all expressions are assumed to be pure.
+
+    (macroexpand '($ 2 ^ 2x * 2 ^ 2x)
+    => ‘(let ((#:subexp11325 (^ 2 (* 2 x))))
+          (* #:subexp11325 #:subexp11325))
+          
+## Extending
+
+Infix-Math is easily to extend. In fact, you may not even need to
+extend it.
+
+Any symbol that consists entirely of operator characters (everything
+but dashes, underscores, whitespace or alphanumeric characters) is
+interpreted as an infix operator, with the highest non-unary priority.
+
+    (defun ** (x y)
+      "Matrix multiplication, maybe."
+      ...)
+    
+    (macroexpand '($ x ** y)) => (** x y) 
+    
+(This approach is taken from Haskell.)
+
+You can use any function as an infix operator by surrounding its name
+with dots.
+
+    (defun choose (n k)
+      "Binomial coefficient, maybe."
+      ...)
+    
+    (macroexpand '($ n .choose. k)) => '(choose n k)
+    
+Again, the operator has the highest non-unary priority.
+    
+(This approach is taken from Haskell and Fortran.)
+
+If you need more flexibility, use `declare-operator`.
+
+To copy the precedence of another operator:
+
+    (declare-operator ** :from *)
+
+To declare a unary operator:
+
+    (declare-operator √ :from -)
+    
+To declare an operator right-associative:
+
+    (declare-operator ?
+      :from * 
+      :right-associative t)
+
+[Julia]: http://julialang.org
+[shunting yard]: https://en.wikipedia.org/wiki/Shunting-yard_algorithm

@@ -160,7 +160,7 @@
       (removef *right-associative* operator)))
 
 (defvar *unary*
-  '(- √))
+  '(- sqrt √))
 
 (defun unary? (operator)
   (member operator *unary*))

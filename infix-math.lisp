@@ -7,6 +7,7 @@
    :serapeum
    :infix-math/symbols
    :infix-math/data)
+  (:import-from :wu-decimal :parse-decimal)
   (:export :$ :declare-operator :over :^))
 
 (in-package #:infix-math)
@@ -123,15 +124,18 @@ Literal coefficients are assumed to be in base 10."
                (cond ((< (length str) 2) sym)
                      ;; Replace a series of dashes or underscores with
                      ;; `over'.
-                     ((or (every (op (eql #\- _)) str)
-                          (every (op (eql #\_ _)) str))
+                     ((or (every (lambda (c) (eql #\- c)) str)
+                          (every (lambda (c) (eql #\_ c)) str))
                       'over)
-                     (t (multiple-value-bind (leading-int end)
-                            (parse-integer str :junk-allowed t :radix 10)
-                          (cond (leading-int
+                     (t (multiple-value-bind (coefficient end)
+                            (parse-decimal str :junk-allowed t)
+                          (when (and (null coefficient) (> end 0))
+                            ;; This still may not work: e.g. `-x`.
+                            (setf coefficient (parse-decimal (subseq str 0 end))))
+                          (cond (coefficient
                                  (let* ((name (subseq str end))
                                         (sym2 (intern name package)))
-                                   `(* ,leading-int ,sym2)))
+                                   `(* ,coefficient ,sym2)))
                                 ((string^= "-" str)
                                  (let* ((name (subseq str 1))
                                         (sym2 (intern name package)))
