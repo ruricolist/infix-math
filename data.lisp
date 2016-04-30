@@ -51,7 +51,7 @@
    Dijkstra (see EWD 1300). Perl 6 is also supposed to use them this
    way, and I have adopted its precedence levels.")
 
-(defparameter *variadic*
+(defvar *variadic*
   '(+ * × / gcd lcm max min logand logxor logeqv logior min max)
   "Built-in functions that take variable-length argument lists.
 
@@ -62,14 +62,14 @@
    precision (see 12.1.1.1.1). Preserving this behavior falls under
    least surprise.")
 
-(defparameter *associative*
+(defvar *associative*
   '(+ * × gcd lcm max min logand logxor logeqv logior)
   "Associative operators.")
 
-(defparameter *right-associative*
+(defvar *right-associative*
   '(expt ^ $$))
 
-(defparameter *precedence*
+(defvar *precedence*
   (alexandria:alist-hash-table
    (loop for i from 0
          for level in *order-of-operations*
