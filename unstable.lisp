@@ -1,6 +1,6 @@
 (defpackage :infix-math/unstable
   (:use :cl :floating-point-contractions :optima)
-  (:import-from :serapeum :~>>)
+  (:import-from :serapeum :~>> :expand-macro)
   (:import-from :infix-math/symbols :^ :over)
   (:import-from :fare-quasiquote)
   (:import-from :named-readtables :in-readtable)
@@ -18,7 +18,8 @@
 
 (defpattern = (x)
   (let ((it (gensym (string 'it))))
-    `(guard ,it (cl:= ,it ,x))))
+    `(guard ,it (and (numberp ,it)
+                     (cl:= ,it ,x)))))
 
 ;;; http://www.cliki.net/EXPT-MOD
 (defun expt-mod (n exponent modulus)
@@ -30,9 +31,10 @@
           (setf result (mod (* result sqr) modulus))
         finally (return result)))
 
-(defun rewrite (form)
+(defun rewrite (form &aux (orig form))
   "If FORM is recognized as a numerically unstable expression, rewrite
 it."
+  (setf form (expand-macro form))
   (match form
     ((and x (type (not list))) x)
 
@@ -107,14 +109,8 @@ it."
          (expt (- ,(= 1) ,x)
                ,(= 2)))
       `(* ,x (- 2 ,x)))
-
-    (otherwise form)))
-
-(defun replace-aliases (form)
-  (~>> form
-       copy-tree
-       (nsubst 'expt '^)
-       (nsubst '/ 'over)))
+    ;; Return the original form for readability's sake.
+    (otherwise orig)))
 
 (defun rewrite-unstable-expressions (form)
   (labels ((rec (form)
@@ -124,4 +120,4 @@ it."
                        (mapcar #'rec form)
                        form)
                    (mapcar #'rec rewrite)))))
-    (rec (replace-aliases form))))
+    (rec form)))

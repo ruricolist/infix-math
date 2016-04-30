@@ -14,13 +14,17 @@
   `(progn
      (declaim (inline ,new))
      (defun ,new (a)
-       (,old a))))
+       (,old a))
+     (define-compiler-macro ,new (a)
+       (list ',old a))))
 
 (defmacro binary-operator (new old)
   `(progn
      (declaim (inline ,new))
      (defun ,new (a b)
-       (,old a b))))
+       (,old a b))
+     (define-compiler-macro ,new (a b)
+       (list ',old a b))))
 
 (defmacro unary-operators (&body body)
   `(progn
