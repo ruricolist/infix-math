@@ -124,21 +124,18 @@
         (right-associative? name) right-associative)
   name)
 
-(defun copy-operator (from to)
-  (save-operator :name to
-                 :precedence (precedence from)
-                 :right-associative (right-associative? from)
-                 :associative (associative? from)))
-
-(defmacro declare-operator (new &key from precedence associative right-associative)
+(defmacro declare-operator (new &key
+                                  (from (required-argument 'from))
+                                  (associative `(associative? ',from))
+                                  (variadic `(variadic? ',from))
+                                  (right-associative `(right-associative? ',from)))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     ,@(if from
-           `(copy-operator ',from ',new)
-           `(save-operator
-             :name ',new
-             :precedence ,precedence
-             :associative ,associative
-             :right-associative ,right-associative))))
+     (save-operator
+      :name ',new
+      :precedence (precedence ',from)
+      :associative ,associative
+      :right-associative ,right-associative
+      :variadic ,variadic)))
 
 (defun variadic? (operator)
   (member operator *variadic*))
