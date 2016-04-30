@@ -52,7 +52,7 @@
    way, and I have adopted its precedence levels.")
 
 (defparameter *variadic*
-  '(+ * × gcd lcm max min logand logxor logeqv logior)
+  '(+ * × / gcd lcm max min logand logxor logeqv logior min max)
   "Built-in functions that take variable-length argument lists.
 
    N.B. (+ x y z) ≢ (reduce #'+ x y z). Reduce always works
