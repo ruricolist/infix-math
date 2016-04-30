@@ -63,7 +63,7 @@
    least surprise.")
 
 (defparameter *associative*
-  '(+ * gcd lcm max min logand logxor logeqv logior)
+  '(+ * × gcd lcm max min logand logxor logeqv logior)
   "Associative operators.")
 
 (defparameter *right-associative*
