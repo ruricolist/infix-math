@@ -71,8 +71,9 @@
   "Table of operator precedence.")
 
 (defun operator-char? (c)
-  (not (or (alpha-char-p c)
-           (find c "-_"))))
+  (nor (alpha-char-p c)
+       (whitespacep c)
+       (find c "-_")))
 
 (defun dotted-operator? (sym)
   (let ((s (string sym)))
