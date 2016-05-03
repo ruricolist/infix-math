@@ -8,6 +8,7 @@
    :infix-math/symbols
    :infix-math/data)
   (:import-from :wu-decimal :parse-decimal)
+  (:import-from :parse-number)
   (:export :$ :declare-operator :over :^))
 
 (in-package #:infix-math)
@@ -133,10 +134,7 @@ Literal coefficients are assumed to be in base 10."
                           (every (lambda (c) (eql #\_ c)) str))
                       'over)
                      (t (multiple-value-bind (coefficient end)
-                            (parse-decimal str :junk-allowed t)
-                          (when (and (null coefficient) (> end 0))
-                            ;; This still may not work: e.g. `-x`.
-                            (setf coefficient (parse-decimal (subseq str 0 end))))
+                            (parse-coefficient str)
                           (cond (coefficient
                                  (let* ((name (subseq str end))
                                         (sym2 (intern name package)))
@@ -156,12 +154,48 @@ Literal coefficients are assumed to be in base 10."
                                 (t sym)))))))
            (rec (form)
              (if (atom form)
-                 (if (symbolp form)
+                 (if (and (symbolp form)
+                          (not (null form))
+                          (not (eql (symbol-package form)
+                                    (find-package :common-lisp))))
                      (expand-symbol form)
                      form)
                  (cons (rec (car form))
                        (rec (cdr form))))))
     (rec form)))
+
+(defun parse-coefficient (str)
+  (let (fraction? decimal? (i 0))
+    (let ((out
+            (with-input-from-string (in str)
+              (with-output-to-string (out)
+                (loop for c = (read-char in nil)
+                      for dot = (eql c #\.)
+                      for slash = (eql c #\/)
+                      for sign = (find c "-+")
+                      for digit = (digit-char-p c)
+                      while (and c (or digit dot slash sign))
+                      do (write-char c out)
+                         (cond (slash
+                                (when decimal?
+                                  (return-from parse-coefficient
+                                    (values nil i)))
+                                (setf fraction? t))
+                               ;; But: some Lisps understand 1/1.5.
+                               (dot
+                                (when fraction?
+                                  (return-from parse-coefficient
+                                    (values nil i)))
+                                (setf decimal? t)))
+                         (incf i))))))
+      (values
+       (cond (fraction?
+              (parse-number out))
+             (decimal?
+              (parse-decimal out :junk-allowed t))
+             ((> (length out) 0)
+              (parse-integer out :junk-allowed t)))
+       i))))
 
 (defmacro $ (&rest form &environment env)
   "Compile an infix math expression, recursively.
