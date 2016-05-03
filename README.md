@@ -123,11 +123,11 @@ Any symbol that consists entirely of operator characters (anything but
 dashes, underscores, whitespace or alphanumeric characters) is
 interpreted as an infix operator, with the highest non-unary priority.
 
-    (defun ** (x y)
+    (defun <*> (x y)
       "Matrix multiplication, maybe."
       ...)
 
-    (macroexpand '($ x * y ** z)) => (* x (** y z))
+    (macroexpand '($ x * y <*> z)) => (* x (<*> y z))
 
 (This approach is taken from Haskell.)
 
@@ -148,7 +148,7 @@ If you need more flexibility, use `declare-operator`.
 
 To copy the precedence of another operator:
 
-    (declare-operator ** :from *)
+    (declare-operator <*> :from *)
 
 To declare a unary operator:
 
