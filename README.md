@@ -20,6 +20,13 @@ The macro `$` is the entry point into Infix-Math.
     ($ 2 + 2)     => 4
     ($ 1 + 2 * 3) => 7
 
+Common subexpression elimination is automatic and aggressive. All
+forms are assumed to be pure. Math does not have side effects.
+
+    (macroexpand '($ 2 ^ 2x * 2 ^ 2x)
+    => ‘(let ((#:subexp11325 (^ 2 (* 2 x))))
+          (* #:subexp11325 #:subexp11325))
+
 The parser automatically descends into function argument lists.
 
     ($ (tan pi * (p - 1/2))) ≡ ($ (tan ($ pi * (p - 1/2))))
@@ -106,13 +113,6 @@ You can use fractions as literal coefficients.
 Literal coefficients are very nice for units of measurement.
 
 (The idea for literal coefficients comes from Julia.)
-
-Common subexpression elimination in infix-math is automatic and
-aggressive, since all expressions are assumed to be pure.
-
-    (macroexpand '($ 2 ^ 2x * 2 ^ 2x)
-    => ‘(let ((#:subexp11325 (^ 2 (* 2 x))))
-          (* #:subexp11325 #:subexp11325))
 
 ## Extending
 
