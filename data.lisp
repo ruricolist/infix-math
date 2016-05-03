@@ -92,7 +92,8 @@
 
 (defun operator? (operator)
   (and (symbolp operator)
-       (precedence operator)))
+       (or (precedence operator)
+           (unary? operator))))
 
 (defun trim-dotted-operator (operator)
   (unless (operator? operator)
