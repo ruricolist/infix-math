@@ -1,14 +1,22 @@
 (defpackage :infix-math/symbols
   (:use :cl)
+  #+sbcl :lock #+sbcl t
   (:export
    :^
    :! :√
    :× :% :÷
    :<< :>>
    :&
-   :over))
+   :over
+   :π))
 
 (in-package :infix-math/symbols)
+
+(define-symbol-macro π pi)
+
+(define-symbol-macro e (exp 1d0))
+
+(define-symbol-macro i (sqrt -1))
 
 (defmacro unary-operator (new old)
   `(progn
