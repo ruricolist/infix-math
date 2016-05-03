@@ -88,9 +88,14 @@
       (make-gensym-list (length repeats) (string 'subexp)))
 
     (if repeats
-        `(let ,(mapcar #'list gensyms repeats)
-           ,(sublis (mapcar #'cons repeats gensyms) form
-                    :test #'equal))
+        ;; Recurse; there could still be repeated subforms in the
+        ;; bindings list. E.g. ($ 2 ^ 2x * 3 ^ 2x * 3 ^ 2x), where the
+        ;; first pass isolates 3^2x and 2x, and the second pass
+        ;; isolates 2x in 3^2x.
+        (eliminate-common-subexpressions
+         `(let ,(mapcar #'list gensyms repeats)
+            ,(sublis (mapcar #'cons repeats gensyms) form
+                     :test #'equal)))
         form)))
 
 (defun expand-expression (exprs)
