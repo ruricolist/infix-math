@@ -170,5 +170,11 @@ inspire false confidence. You would have to catch everything.
 It might also be nice to recognize polynomials and rewrite them into
 Horner form, possibly with preconditioning for exact coefficients.
 
+In principle, if a Lisp implementation compiled `x * y +z` using
+[FMA][], CSE would have to be careful to avoid lifting out the
+multiplication in expressions like `(x * y + a) * (x * y + b)`.
+However, to be best of my knowledge, no Lisp does that.
+
+[FMA]: https://en.wikipedia.org/wiki/Fused_multiply%E2%80%93add
 [Julia]: http://julialang.org
 [shunting yard]: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
