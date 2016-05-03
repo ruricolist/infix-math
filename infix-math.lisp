@@ -128,6 +128,9 @@ Literal coefficients are assumed to be in base 10."
              (let ((package (symbol-package sym))
                    (str (string sym)))
                (cond ((< (length str) 2) sym)
+                     ;; A practical optimization: skip trying to parse
+                     ;; a coefficient if there's clearly no coefficient there.
+                     ((alpha-char-p (aref str 0)) sym)
                      ;; Replace a series of dashes or underscores with
                      ;; `over'.
                      ((or (every (lambda (c) (eql #\- c)) str)
