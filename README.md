@@ -9,13 +9,13 @@ errors. The easier it is to prevent transcription errors, the easier
 it is to trace the source of any bugs that do occur – because
 sometimes the formula is wrong.
 
-Even if you end up rewriting the formula for speed or numerical
-stability, having the specification in an executable form is
-invaluable for reference and testing.
-
 (Having to transcribe formulas from crooked, blurry scans of ancient
 pre-LaTeX typescripts is bad enough without having to parse operator
 precedence and do common subexpression elimination in your head.)
+
+Even if you end up rewriting the formula for speed or numerical
+stability, having the specification in an executable form is
+invaluable for reference and testing.
 
 ## Examples
 
@@ -24,16 +24,23 @@ The macro `$` is the entry point into Infix-Math.
     ($ 2 + 2)     => 4
     ($ 1 + 2 * 3) => 7
 
+Operator precedence parsing in Infix-Math is reliable – it uses
+Dijkstra’s [shunting yard][] algorithm.
+
+The parser automatically descends into function argument lists, which
+means that the total number of parentheses is never greater than it
+would be in a purely infix language.
+
+    ($ (tan pi * (p - 1/2)))
+    ≡ (tan (* pi (- p 1/2)))
+    ≅ tan(pi*(p-0.5))
+
 Common subexpression elimination is automatic and aggressive. All
 forms are assumed to be pure. Math does not have side effects.
 
     (macroexpand '($ 2 ^ 2x * 2 ^ 2x)
     => ‘(let ((#:subexp11325 (^ 2 (* 2 x))))
           (* #:subexp11325 #:subexp11325))
-
-The parser automatically descends into function argument lists.
-
-    ($ (tan pi * (p - 1/2))) ≡ ($ (tan ($ pi * (p - 1/2))))
 
 Infix-Math knows about the following arithmetic and bitwise operators,
 in descending order of precedence.
@@ -49,9 +56,6 @@ in descending order of precedence.
 - logior, logorc1, logorc2, lognor
 - min, max
 - over
-
-Operator precedence parsing in Infix-Math is reliable – it uses
-Dijkstra’s [shunting yard][] algorithm.
 
 Operations at the same level of precedence are always evaluated
 left-to-right.
