@@ -11,7 +11,8 @@
    :precedence
    :unary?
    :right-associative?
-   :declare-operator))
+   :declare-unary-operator
+   :declare-binary-operator))
 
 (in-package :infix-math/data)
 
@@ -113,22 +114,24 @@
         (assure precedence value)))
 
 (defun save-operator (name
-                      &key from
+                      &key (from (required-argument 'from))
                            (right-associative
                             (right-associative? from)))
-  (if (unary? from)
-      (progn
-        (when right-associative
-          (error "~a cannot be associative and unary." name))
-        (setf (precedence name) 0
-              (unary? name) t))
-      (setf (precedence name) (precedence from)
-            (right-associative? name) right-associative)))
+  (setf (precedence name) (precedence from)
+        (right-associative? name) right-associative))
 
-(defmacro declare-operator (new &body
-                                  (&key
-                                     from
-                                     (right-associative `(right-associative? ',from))))
+(defun save-unary-operator (name)
+  (setf (precedence name) 0
+        (unary? name) t))
+
+(defmacro declare-unary-operator (name)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (save-unary-operator ',name)))
+
+(defmacro declare-binary-operator (new &body
+                                         (&key
+                                            (from (required-argument 'from))
+                                            (right-associative `(right-associative? ',from))))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      ,(once-only (right-associative)
         `(save-operator

@@ -9,7 +9,10 @@
    :infix-math/data)
   (:import-from :wu-decimal :parse-decimal)
   (:import-from :parse-number)
-  (:export :$ :declare-operator :over :^))
+  (:export
+   :$ :over :^
+   :declare-unary-operator
+   :declare-binary-operator))
 
 (in-package #:infix-math)
 

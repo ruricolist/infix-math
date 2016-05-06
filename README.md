@@ -68,8 +68,9 @@ Parentheses can be used for grouping.
 
     ($ 0.1d0 + (0.2d0 + 0.3d0)) => 0.6d0
 
-Infix-Math exports just four symbols: `$`, `^`, `over`, and
-`declare-operator`.
+Infix-Math exports just five symbols: `$`, `^`, `over`, and two forms
+for declaring operators: `declare-unary-operator` and
+`declare-binary-operator`.
 
 (If you want more math symbols, the package `infix-math/symbols`
 provides a few more.)
@@ -152,19 +153,19 @@ Again, the operator has the highest non-unary priority.
 
 (This approach is taken from Haskell and Fortran.)
 
-If you need more flexibility, use `declare-operator`.
+If you need more flexibility, declare the operators.
 
 To copy the precedence of another operator:
 
-    (declare-operator <*> :from *)
+    (declare-binary-operator <*> :from *)
 
 To declare a unary operator:
 
-    (declare-operator √ :from -)
+    (declare-unary-operator √)
 
 To declare an operator right-associative:
 
-    (declare-operator ?
+    (declare-binary-operator ?
       :from *
       :right-associative t)
 
