@@ -205,26 +205,9 @@ Literal coefficients are assumed to be in base 10."
               (parse-integer out :junk-allowed t)))
        i))))
 
-(defmacro $ (&rest form &environment env)
-  "Compile an infix math expression, recursively.
-
-One notable feature: handles expressions like (exp 2 - 1), so
-it (almost) never needs more parentheses that would be required in an
-infix language. (The exception is a leading unary negation: that still
-requires parentheses.)
-
-Another notable feature: you can negate a variable by writing it with a leading dash:
-
-     ($ -x) => (- x)
-
-You can also write a variable with a literal coefficient:
-
-     ($ 2x) => (* 2 x)
-
-Note that literal coefficients have higher priority than binary operations:
-
-     (let ((x 3)) ($ 2 ^ 2x)) => 64"
-  (~> form
+(defmacro $ (&rest formula &environment env)
+  "Compile a mathematical formula in infix notation."
+  (~> formula
       expand-fancy-symbols
       expand-expression
       parse-expression
