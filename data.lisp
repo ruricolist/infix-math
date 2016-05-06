@@ -49,17 +49,6 @@
    Dijkstra (see EWD 1300). Perl 6 is also supposed to use them this
    way, and I have adopted its precedence levels.")
 
-(defvar *variadic*
-  '(+ * × / gcd lcm max min logand logxor logeqv logior min max)
-  "Built-in functions that take variable-length argument lists.
-
-   N.B. (+ x y z) ≢ (reduce #'+ x y z). Reduce always works
-   left-to-right, but in (+ x y z) the order of evaluation is not
-   guaranteed: the implementation may use any of several strategies,
-   with unpredictable results when the operands are of varying
-   precision (see 12.1.1.1.1). Preserving this behavior falls under
-   least surprise.")
-
 (defvar *right-associative*
   '(expt ^ $$))
 
@@ -138,22 +127,6 @@
           :name ',new
           :from ',from
           :right-associative ,right-associative))))
-
-(defun variadic? (operator)
-  (member operator *variadic*))
-
-(defun (setf variadic?) (value operator)
-  (if value
-      (pushnew (assure operator operator) *variadic*)
-      (removef *variadic* operator)))
-
-(defun associative? (operator)
-  (member operator *associative*))
-
-(defun (setf associative?) (value operator)
-  (if value
-      (pushnew (assure operator operator) *associative*)
-      (removef *associative* operator)))
 
 (defun right-associative? (operator)
   (member operator *right-associative*))
