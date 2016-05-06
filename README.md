@@ -183,6 +183,12 @@ In principle, if a Lisp implementation compiled `x * y +z` using
 multiplication in expressions like `(x * y + a) * (x * y + b)`.
 However, to be best of my knowledge, no Lisp does that.
 
+Since the big idea is to make it easy to compare the formula as
+transcribed with the original, it would be nice to provide for
+exporting the parse tree of the formula as LaTeX. To be useful,
+however, that would probably require support on the Slime/Sly side for
+actually rendering the LaTeX.
+
 [FMA]: https://en.wikipedia.org/wiki/Fused_multiply%E2%80%93add
 [Julia]: http://julialang.org
 [shunting yard]: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
