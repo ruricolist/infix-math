@@ -133,8 +133,8 @@ Literal coefficients are assumed to be in base 10."
                      ((alpha-char-p (aref str 0)) sym)
                      ;; Replace a series of dashes or underscores with
                      ;; `over'.
-                     ((or (every (lambda (c) (eql #\- c)) str)
-                          (every (lambda (c) (eql #\_ c)) str))
+                     ((or (every (curry #'eql #\-) str)
+                          (every (curry #'eql #\_) str))
                       'over)
                      (t (multiple-value-bind (coefficient end)
                             (parse-coefficient str)
@@ -142,15 +142,6 @@ Literal coefficients are assumed to be in base 10."
                                  (let* ((name (subseq str end))
                                         (sym2 (intern name package)))
                                    `(* ,coefficient ,sym2)))
-                                ((string^= "-" str)
-                                 (let* ((name (subseq str 1))
-                                        (sym2 (intern name package)))
-                                   `(- ,sym2)))
-                                ((string^= "+" str)
-                                 (let* ((name (subseq str 1))
-                                        (sym2 (intern name package)))
-                                   ;; Or just str.
-                                   `(+ ,sym2)))
                                 ((string^= "!" str)
                                  (let* ((name (subseq str 1))
                                         (sym2 (intern name package)))
@@ -173,7 +164,7 @@ Literal coefficients are assumed to be in base 10."
     (rec form)))
 
 (defun parse-coefficient (str)
-  (let (fraction? decimal? (i 0))
+  (let (fraction? decimal? digits? (i 0))
     (let ((out
             (with-input-from-string (in str)
               (with-output-to-string (out)
@@ -181,7 +172,7 @@ Literal coefficients are assumed to be in base 10."
                       for dot = (eql c #\.)
                       for slash = (eql c #\/)
                       for sign = (find c "-+")
-                      for digit = (digit-char-p c)
+                      for digit = (digit-char-p c 10)
                       while (and c (or digit dot slash sign))
                       do (write-char c out)
                          (cond (slash
@@ -194,15 +185,21 @@ Literal coefficients are assumed to be in base 10."
                                 (when fraction?
                                   (return-from parse-coefficient
                                     (values nil i)))
-                                (setf decimal? t)))
+                                (setf decimal? t))
+                               (digit
+                                (setf digits? t)))
                          (incf i))))))
       (values
        (cond (fraction?
               (parse-number out))
              (decimal?
               (parse-decimal out :junk-allowed t))
-             ((> (length out) 0)
-              (parse-integer out :junk-allowed t)))
+             (digits?
+              (parse-integer out :junk-allowed t))
+             ((string^= "-" str)
+              (values -1 1))
+             ((string^= "+" str)
+              (values +1 1)))
        i))))
 
 (defmacro $ (&rest formula &environment env)
