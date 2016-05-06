@@ -9,9 +9,13 @@ errors. The easier it is to prevent transcription errors, the easier
 it is to trace the source of any bugs that do occur – because
 sometimes the formula is wrong.
 
-Having to transcribe formulas from crooked, blurry scans of ancient
+Even if you end up rewriting the formula for speed or numerical
+stability, having the specification in an executable form is
+invaluable for reference and testing.
+
+(Having to transcribe formulas from crooked, blurry scans of ancient
 pre-LaTeX typescripts is bad enough without having to parse operator
-precedence and do common subexpression elimination in your head.
+precedence and do common subexpression elimination in your head.)
 
 ## Examples
 
