@@ -146,6 +146,11 @@ Literal coefficients are assumed to be in base 10."
                                  (let* ((name (subseq str 1))
                                         (sym2 (intern name package)))
                                    `(- ,sym2)))
+                                ((string^= "+" str)
+                                 (let* ((name (subseq str 1))
+                                        (sym2 (intern name package)))
+                                   ;; Or just str.
+                                   `(+ ,sym2)))
                                 ((string^= "!" str)
                                  (let* ((name (subseq str 1))
                                         (sym2 (intern name package)))
