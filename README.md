@@ -105,17 +105,17 @@ Variables can be written with literal numbers as coefficients.
 Literal coefficients have very high priority.
 
     ($ 2 ^ 2 * x) ≡ (* (expt 2 2) x)     => 20
-    ($ 2 ^ 2x)    ≡ (* (expt 2 (* 2 x))) => 1024
+    ($ 2 ^ 2x)    ≡ (expt 2 (* 2 x))     => 1024
 
 A literal coefficient of 1 can be omitted.
 
-    ($ -x) ≡ (- x)
+    ($ -x) ≡ (* -1 x)
 
 Literal coefficients are parsed as decimals, rather than floats.
 
     ($ 1.5x) ≡ (* 3/2 x)
 
-You can use fractions as literal coefficients.
+You can also use fractions as literal coefficients.
 
     ($ 1/3x) ≡ (* 1/3 x)
 
@@ -179,10 +179,10 @@ inspire false confidence. You would have to catch everything.
 It might also be nice to recognize polynomials and rewrite them into
 Horner form, possibly with preconditioning for exact coefficients.
 
-In principle, if a Lisp implementation compiled `x * y +z` using
+In principle, if a Lisp implementation compiled `x * y + z` using
 [FMA][], CSE would have to be careful to avoid lifting out the
-multiplication in expressions like `(x * y + a) * (x * y + b)`.
-However, to be best of my knowledge, no Lisp does that.
+multiplication in expressions like `(x * y + a) * (x * y + b)`. To the
+best of my knowledge, however, no Lisp does that.
 
 Since the big idea is to make it easy to compare the formula as
 transcribed with the original, it would be nice to provide for
