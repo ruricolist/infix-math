@@ -102,10 +102,11 @@
   (setf (gethash (assure operator operator) *precedence*)
         (assure precedence value)))
 
-(defun save-operator (name
-                      &key (from (required-argument 'from))
-                           (right-associative
-                            (right-associative? from)))
+(defun save-operator (&key
+                        (name (required-argument 'name))
+                        (from (required-argument 'from))
+                        (right-associative
+                         (right-associative? from)))
   (setf (precedence name) (precedence from)
         (right-associative? name) right-associative))
 
