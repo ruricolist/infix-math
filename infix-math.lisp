@@ -6,11 +6,12 @@
    :alexandria
    :serapeum
    :infix-math/symbols
-   :infix-math/data)
+   :infix-math/data
+   :infix-math/unstable)
   (:import-from :wu-decimal :parse-decimal)
   (:import-from :parse-number)
   (:export
-   :$ :over :^
+   :$ :$$ :over :^
    :declare-unary-operator
    :declare-binary-operator))
 
@@ -211,4 +212,12 @@ Literal coefficients are assumed to be in base 10."
       expand-fancy-symbols
       expand-expression
       parse-expression
+      (eliminate-common-subexpressions env)))
+
+(defmacro $$ (&rest formula &environment env)
+  (~> formula
+      expand-fancy-symbols
+      expand-expression
+      parse-expression
+      rewrite-unstable-expressions
       (eliminate-common-subexpressions env)))
