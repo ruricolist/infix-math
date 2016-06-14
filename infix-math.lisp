@@ -123,7 +123,6 @@
 
 (defun expand-fancy-symbols (form)
   "Expand -x into (- x) and 2x into (* 2 x).
-Only integers are allowed as literal coefficients.
 
 Literal coefficients have the same precedence as unary operators.
 
