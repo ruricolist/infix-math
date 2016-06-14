@@ -1,13 +1,19 @@
 # Infix-Math
 
-Infix-Math is a library that provides a special syntax for
-transcribing mathematical formulas into Lisp. Bitter experience has
-taught me that the more the formula on screen resembles the formula on
-paper, the better. The more the formula on screen resembles the
-formula on paper, the easier it is to prevent bugs from transcription
-errors. The easier it is to prevent transcription errors, the easier
-it is to trace the source of any bugs that do occur – because
-sometimes the formula is wrong.
+Infix-Math is a library that provides a special-purpose syntax for
+transcribing mathematical formulas into Lisp.
+
+The question of infix syntax in Lisp has been vexed since the days of
+punch cards. This library has nothing to do with that. It is a
+pragmatic response to the challenges of mixing math and programming.
+Infix syntax is just the beginning.
+
+Bitter experience has taught me that the more the formula on screen
+resembles the formula on paper, the better. The more the formula on
+screen resembles the formula on paper, the easier it is to prevent
+bugs from transcription errors. The easier it is to prevent
+transcription errors, the easier it is to trace the source of any bugs
+that do occur – because sometimes the formula is wrong.
 
 (Having to transcribe formulas from crooked, blurry scans of ancient
 pre-LaTeX typescripts is bad enough without having to parse operator
@@ -68,9 +74,9 @@ Parentheses can be used for grouping.
 
     ($ 0.1d0 + (0.2d0 + 0.3d0)) => 0.6d0
 
-Infix-Math exports just five symbols: `$`, `^`, `over`, and two forms
-for declaring operators: `declare-unary-operator` and
-`declare-binary-operator`.
+Infix-Math exports just five symbols: `$`, `$$` (see below), `^`,
+`over`, and two forms for declaring operators:
+`declare-unary-operator` and `declare-binary-operator`.
 
 (If you want more math symbols, the package `infix-math/symbols`
 provides a few more.)
@@ -122,6 +128,22 @@ You can also use fractions as literal coefficients.
 Literal coefficients are very nice for units of measurement.
 
 (The idea for literal coefficients comes from Julia.)
+
+## Automatic rewrites
+
+Infix-Math includes an (experimental) facility for automatically
+recognizing inefficient or potentially unstable expressions and
+rewriting them into more stable or efficient forms.
+
+To opt-in to automatic rewrites, use `$$` instead of `$`.
+
+    ;; Use log1p(x) instead of log(1+x).
+    ($ (log 1 + y))  ≡ (log (+ 1 x))
+    ($$ (log 1 + y)) ≡ (log1+ x)
+
+    ;; Use modular exponentiation.
+    ($ x ^ y mod z)  ≡ (mod (expt x y) z)
+    ($$ x ^ y mod z) ≡ (expt-mod x y z)
 
 ## Extending
 
