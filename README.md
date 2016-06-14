@@ -125,7 +125,8 @@ You can also use fractions as literal coefficients.
 
     ($ 1/3x) ≡ (* 1/3 x)
 
-Literal coefficients are very nice for units of measurement.
+Among other things, literal coefficients are very convenient for units
+of measurement.
 
 (The idea for literal coefficients comes from Julia.)
 
@@ -150,9 +151,10 @@ To opt-in to automatic rewrites, use `$$` instead of `$`.
 Infix-Math is easily to extend. In fact, you may not even need to
 extend it.
 
-Any symbol that consists entirely of operator characters (anything but
-dashes, underscores, whitespace or alphanumeric characters) is
+Any symbol that consists entirely of operator characters is
 interpreted as an infix operator, with the highest non-unary priority.
+Operator characters are anything but dashes, underscores, whitespace
+or alphanumeric characters.
 
     (defun <*> (x y)
       "Matrix multiplication, maybe."
@@ -175,15 +177,16 @@ Again, the operator has the highest non-unary priority.
 
 (This approach is taken from Haskell and Fortran.)
 
-If you need more flexibility, declare the operators.
-
-To copy the precedence of another operator:
-
-    (declare-binary-operator <*> :from *)
+If you need more flexibility, declare the operators using
+`declare-binary-operator` or `declare-unary-operator`.
 
 To declare a unary operator:
 
     (declare-unary-operator √)
+
+To copy the precedence of another operator:
+
+    (declare-binary-operator <*> :from *)
 
 To declare an operator right-associative:
 
@@ -193,18 +196,8 @@ To declare an operator right-associative:
 
 ## Future work
 
-It might be nice to have the macro rewrite unstable expressions into
-more stable forms. It would be easy to, say, automatically rewrite `($
-(exp a) – 1)` into `(exp-1 a)`. But just doing it *sometimes* would
-inspire false confidence. You would have to catch everything.
-
-It might also be nice to recognize polynomials and rewrite them into
-Horner form, possibly with preconditioning for exact coefficients.
-
-In principle, if a Lisp implementation compiled `x * y + z` using
-[FMA][], CSE would have to be careful to avoid lifting out the
-multiplication in expressions like `(x * y + a) * (x * y + b)`. To the
-best of my knowledge, however, no Lisp does that.
+It might be nice to recognize polynomials and rewrite them into
+Horner form.
 
 Since the big idea is to make it easy to compare the formula as
 transcribed with the original, it would be nice to provide for
