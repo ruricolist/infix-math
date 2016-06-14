@@ -34,7 +34,15 @@
 (defun rewrite (form &aux (orig form))
   "If FORM is recognized as a numerically unstable expression, rewrite
 it."
-  (setf form (expand-macro form))
+  ;; Do one level of macroexpand on FORM and its arguments,
+  ;; recursively.
+  (labels ((rec (form)
+             (if (listp form)
+                 (expand-macro
+                  (cons (first form)
+                        (mapcar #'rec (rest form))))
+                 form)))
+    (setf form (rec form)))
   (match form
     ((and x (type (not list))) x)
 
