@@ -36,6 +36,9 @@
   "Placeholder in case we can optimize this."
   `(* ,x (+ ,y ,z)))
 
+(defmacro mulsub (x y z)
+  `(muladd ,x ,y (- ,z)))
+
 (defun rewrite (form &aux (orig form))
   "If FORM is recognized as a numerically unstable expression, rewrite
 it."
@@ -54,6 +57,8 @@ it."
     ;; Combined multiply-add.
     (`(* ,x (+ ,y ,z))
       `(muladd ,x ,y ,z))
+    (`(* ,x (- ,y ,z))
+      `(mulsub ,x ,y ,z))
 
     ;; Hypotenuse.
     (`(sqrt (expt ,a ,(= 2)) (expt ,b ,(= 2)))
