@@ -128,43 +128,46 @@ Only integers are allowed as literal coefficients.
 Literal coefficients have the same precedence as unary operators.
 
 Literal coefficients are assumed to be in base 10."
-  (labels ((expand-symbol (sym)
-             (let ((package (symbol-package sym))
-                   (str (string sym)))
-               (cond ((< (length str) 2) sym)
-                     ;; A practical optimization: skip trying to parse
-                     ;; a coefficient if there's clearly no coefficient there.
-                     ((alpha-char-p (aref str 0)) sym)
-                     ;; Replace a series of dashes or underscores with
-                     ;; `over'.
-                     ((or (every (curry #'eql #\-) str)
-                          (every (curry #'eql #\_) str))
-                      'over)
-                     (t (multiple-value-bind (coefficient end)
-                            (parse-coefficient str)
-                          (cond (coefficient
-                                 (let* ((name (subseq str end))
-                                        (sym2 (intern name package)))
-                                   `(* ,coefficient ,sym2)))
-                                ((string^= "!" str)
-                                 (let* ((name (subseq str 1))
-                                        (sym2 (intern name package)))
-                                   `(! ,sym2)))
-                                ((string^= "√" str)
-                                 (let* ((name (subseq str 1))
-                                        (sym2 (intern name package)))
-                                   `(sqrt ,sym2)))
-                                (t sym)))))))
-           (rec (form)
-             (if (atom form)
-                 (if (and (symbolp form)
-                          (not (null form))
-                          (not (eql (symbol-package form)
-                                    (find-package :common-lisp))))
-                     (expand-symbol form)
-                     form)
-                 (cons (rec (car form))
-                       (rec (cdr form))))))
+  (local
+    (defun expand-symbol (sym)
+      (let ((package (symbol-package sym))
+            (str (string sym)))
+        (cond ((< (length str) 2) sym)
+              ;; A practical optimization: skip trying to parse
+              ;; a coefficient if there's clearly no coefficient there.
+              ((alpha-char-p (aref str 0)) sym)
+              ;; Replace a series of dashes or underscores with
+              ;; `over'.
+              ((or (every (curry #'eql #\-) str)
+                   (every (curry #'eql #\_) str))
+               'over)
+              (t (multiple-value-bind (coefficient end)
+                     (parse-coefficient str)
+                   (cond (coefficient
+                          (let* ((name (subseq str end))
+                                 (sym2 (intern name package)))
+                            `(* ,coefficient ,sym2)))
+                         ((string^= "!" str)
+                          (let* ((name (subseq str 1))
+                                 (sym2 (intern name package)))
+                            `(! ,sym2)))
+                         ((string^= "√" str)
+                          (let* ((name (subseq str 1))
+                                 (sym2 (intern name package)))
+                            `(sqrt ,sym2)))
+                         (t sym)))))))
+
+    (defun rec (form)
+      (if (atom form)
+          (if (and (symbolp form)
+                   (not (null form))
+                   (not (eql (symbol-package form)
+                             (find-package :common-lisp))))
+              (expand-symbol form)
+              form)
+          (cons (rec (car form))
+                (rec (cdr form)))))
+
     (rec form)))
 
 (defun parse-coefficient (str)
