@@ -31,6 +31,11 @@
           (setf result (mod (* result sqr) modulus))
         finally (return result)))
 
+;;; TODO
+(defmacro muladd (x y z)
+  "Placeholder in case we can optimize this."
+  `(* ,x (+ ,y ,z)))
+
 (defun rewrite (form &aux (orig form))
   "If FORM is recognized as a numerically unstable expression, rewrite
 it."
@@ -45,6 +50,10 @@ it."
     (setf form (rec form)))
   (match form
     ((and x (type (not list))) x)
+
+    ;; Combined multiply-add.
+    (`(* ,x (+ ,y ,z))
+      `(muladd ,x ,y ,z))
 
     ;; Hypotenuse.
     (`(sqrt (expt ,a ,(= 2)) (expt ,b ,(= 2)))
