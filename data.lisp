@@ -49,10 +49,10 @@
    Dijkstra (see EWD 1300). Perl 6 is also supposed to use them this
    way, and I have adopted its precedence levels.")
 
-(defvar *right-associative*
+(defparameter *right-associative*
   '(expt ^ $$))
 
-(defvar *precedence*
+(defparameter *precedence*
   (alexandria:alist-hash-table
    (loop for i from 0
          for level in *order-of-operations*
@@ -137,7 +137,7 @@
       (pushnew (assure operator operator) *right-associative*)
       (removef *right-associative* operator)))
 
-(defvar *unary*
+(defparameter *unary*
   '(- sqrt √))
 
 (defun unary? (operator)
