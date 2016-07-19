@@ -10,7 +10,7 @@
    :π))
 
 ;;; ASDF won't allow :lock in the defpackage form.
-#+sbcl (lock-package :infix-math/symbols)
+#+sbcl (sb-ext:lock-package :infix-math/symbols)
 
 (in-package :infix-math/symbols)
 
