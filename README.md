@@ -74,9 +74,9 @@ Parentheses can be used for grouping.
 
     ($ 0.1d0 + (0.2d0 + 0.3d0)) => 0.6d0
 
-Infix-Math exports just five symbols: `$`, `$$` (see below), `^`,
-`over`, and two forms for declaring operators:
-`declare-unary-operator` and `declare-binary-operator`.
+Infix-Math exports only five symbols: `$`, `^`, `over`, and two macros
+for declaring operators: `declare-unary-operator` and
+`declare-binary-operator`.
 
 (If you want more math symbols, the package `infix-math/symbols`
 provides a few more.)
@@ -129,22 +129,6 @@ Among other things, literal coefficients are very convenient for units
 of measurement.
 
 (The idea for literal coefficients comes from Julia.)
-
-## Automatic rewrites
-
-Infix-Math includes an (experimental) facility for automatically
-recognizing inefficient or potentially unstable expressions and
-rewriting them into more stable or efficient forms.
-
-To opt-in to automatic rewrites, use `$$` instead of `$`.
-
-    ;; Use log1p(x) instead of log(1+x).
-    ($ (log 1 + y))  ≡ (log (+ 1 x))
-    ($$ (log 1 + y)) ≡ (log1+ x)
-
-    ;; Use modular exponentiation.
-    ($ x ^ y mod z)  ≡ (mod (expt x y) z)
-    ($$ x ^ y mod z) ≡ (expt-mod x y z)
 
 ## Extending
 
