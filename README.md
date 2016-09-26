@@ -3,11 +3,6 @@
 Infix-Math is a library that provides a special-purpose syntax for
 transcribing mathematical formulas into Lisp.
 
-The question of infix syntax in Lisp has been vexed since the days of
-punch cards. This library has nothing to do with that. It is a
-pragmatic response to the challenges of mixing math and programming.
-Infix syntax is just the beginning.
-
 Bitter experience has taught me that the more the formula on screen
 resembles the formula on paper, the better. The more the formula on
 screen resembles the formula on paper, the easier it is to prevent
@@ -17,7 +12,7 @@ that do occur – because sometimes the formula is wrong.
 
 (Having to transcribe formulas from crooked, blurry scans of ancient
 pre-LaTeX typescripts is bad enough without having to parse operator
-precedence and do common subexpression elimination in your head.)
+precedence in your head.)
 
 Even if you end up rewriting the formula for speed or numerical
 stability, having the specification in an executable form is
@@ -115,7 +110,7 @@ Literal coefficients have very high priority.
 
 A literal coefficient of 1 can be omitted.
 
-    ($ -x) ≡ (* -1 x)
+    ($ -x) ≡ ($ -1x) ≡ (* -1 x)
 
 Literal coefficients are parsed as decimals, rather than floats.
 
@@ -177,17 +172,6 @@ To declare an operator right-associative:
     (declare-binary-operator ?
       :from *
       :right-associative t)
-
-## Future work
-
-It might be nice to recognize polynomials and rewrite them into
-Horner form.
-
-Since the big idea is to make it easy to compare the formula as
-transcribed with the original, it would be nice to provide for
-exporting the parse tree of the formula as LaTeX. To be useful,
-however, that would probably require support on the Slime/Sly side for
-actually rendering the LaTeX.
 
 [FMA]: https://en.wikipedia.org/wiki/Fused_multiply%E2%80%93add
 [Julia]: http://julialang.org
