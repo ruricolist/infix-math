@@ -69,35 +69,6 @@ Parentheses can be used for grouping.
 
     ($ 0.1d0 + (0.2d0 + 0.3d0)) => 0.6d0
 
-Infix-Math exports only five symbols: `$`, `^`, `over`, and two macros
-for declaring operators: `declare-unary-operator` and
-`declare-binary-operator`.
-
-(If you want more math symbols, the package `infix-math/symbols`
-provides a few more.)
-
-The symbol `^` is just a shorthand for `expt`.
-
-    ($ 1 + 2 * 3 ^ 4) => 163
-
-(`^` is from Dylan.)
-
-The symbol `over` represents the same operation as `/`, but at a much
-lower priority. Using `over` lets you avoid introducing parentheses
-for grouping when transcribing fractions.
-
-    (setf x 5)
-    ($ x * 2 / x * 3)     ≡ (* (/ (* x 2) x) 3) => 6
-    ($ (x * 2) / (x * 3)) ≡ (/ (* x 2) (* x 3)) => 2/3
-    ($ x * 2 over x * 3)  ≡ (/ (* x 2) (* x 3)) => 2/3
-
-You can also spell `over` with a series of dashes or underscores.
-
-    ($ x * 2
-       -----
-       x * 3)
-    => 2/3
-
 Variables can be written with literal numbers as coefficients.
 
     ($ 2x)  => 10
@@ -124,6 +95,77 @@ Among other things, literal coefficients are very convenient for units
 of measurement.
 
 (The idea for literal coefficients comes from Julia.)
+
+## Symbols
+
+Infix-Math exports only five symbols: `$`, `^`, `over`, and two macros
+for declaring operators: `declare-unary-operator` and
+`declare-binary-operator`.
+
+The symbol `^` is just a shorthand for `expt`.
+
+    ($ 1 + 2 * 3 ^ 4) => 163
+
+(`^` is from Dylan.)
+
+The symbol `over` represents the same operation as `/`, but at a much
+lower priority. Using `over` lets you avoid introducing parentheses
+for grouping when transcribing fractions.
+
+    (setf x 5)
+    ($ x * 2 / x * 3)     ≡ (* (/ (* x 2) x) 3) => 6
+    ($ (x * 2) / (x * 3)) ≡ (/ (* x 2) (* x 3)) => 2/3
+    ($ x * 2 over x * 3)  ≡ (/ (* x 2) (* x 3)) => 2/3
+
+You can also spell `over` with a series of dashes or underscores.
+
+    ($ x * 2
+       -----
+       x * 3)
+    => 2/3
+
+If you want more math symbols, the package `infix-math/symbols`
+provides a few more.
+
+## Calculator
+
+You can use Infix-Math to turn your REPL into a calculator.
+
+First, load the `infix-math/calc` system:
+
+    (asdf:load-system "infix-math/calc")
+
+Then, at the REPL, start the calculator:
+
+    (infix-math/calc:calc)
+
+This will put you at a calculator prompt. You can type in mathematical expressions directly:
+
+    $> 2 + 2
+    4
+
+A single form entered at the REPL is interpreted as ordinary CL.
+
+    $> *package*
+    :infix-math/calc-user
+
+You can assign to variables using the `<-` operator.
+
+    $> x <- 2 + 2
+    4
+    $> x
+    4
+
+Certain one-letter variables are provided for you to assign to, such as `x`, `y`, and `z`. You can see the full list by evaluating `:v` at the calculator prompt.
+
+To quit, use `:q`. The value of the last expression evaluated will be returned.
+
+    $> 2 + 2
+    4
+    $> :q
+    4
+    CL-USER> *
+    4
 
 ## Extending
 
