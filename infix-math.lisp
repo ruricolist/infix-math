@@ -16,7 +16,7 @@
 
 (in-package #:infix-math)
 
-(defun precedence< (op1 op2)
+(defun precedence> (op1 op2)
   (if (right-associative? op1)
       (> (precedence op1) (precedence op2))
       (>= (precedence op1) (precedence op2))))
@@ -27,7 +27,9 @@
 (defun make-node (tree operator)
   (let ((operator (trim-dotted-operator operator)))
     (destructuring-bind (x y . rest) tree
-      (cons (list operator y x) rest))))
+      (if (eq operator 'unary)
+          (cons (list y x) rest)
+          (cons (list operator y x) rest)))))
 
 (define-modify-macro nodef (operator) make-node)
 
@@ -41,7 +43,8 @@
                            (operator? last-token)))
               (push token tree)
               (setf token 'unary))
-            (loop while (and stack (precedence< token (car stack)))
+            (loop while (and stack (not (eq token 'unary))
+                             (precedence> token (car stack)))
                   do (nodef tree (pop stack))
                   finally (push token stack)))
           (push token tree))
@@ -107,7 +110,8 @@
    (lambda (expr)
      (cond ((atom expr)
             expr)
-           ((operator? (second expr))
+           ((or (and (symbolp (first expr)) (unary? (first expr)))
+                (operator? (second expr)))
             (parse-expression (expand-expression expr)))
            ;; E.g. (- x * y), (gamma x - y)
            ((operator? (third expr))
