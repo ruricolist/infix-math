@@ -169,7 +169,7 @@ Literal coefficients are assumed to be in base 10."
     (rec form)))
 
 (defun parse-coefficient (str)
-  (let (fraction? decimal? digits? (i 0))
+  (let (fraction? decimal? digits? denom? (i 0))
     (let ((out
             (with-input-from-string (in str)
               (with-output-to-string (out)
@@ -177,7 +177,7 @@ Literal coefficients are assumed to be in base 10."
                       for dot = (eql c #\.)
                       for slash = (eql c #\/)
                       for sign = (find c "-+")
-                      for digit = (digit-char-p c 10)
+                      for digit = (and c (digit-char-p c 10))
                       while (and c (or digit dot slash sign))
                       do (write-char c out)
                          (cond (slash
@@ -192,11 +192,13 @@ Literal coefficients are assumed to be in base 10."
                                     (values nil i)))
                                 (setf decimal? t))
                                (digit
-                                (setf digits? t)))
+                                (setf digits? t)
+                                (when fraction?
+                                  (setf denom? t))))
                          (incf i))))))
       (values
        (cond (fraction?
-              (parse-number out))
+              (and denom? (parse-number out)))
              (decimal?
               (parse-decimal out :junk-allowed t))
              (digits?
