@@ -1,6 +1,6 @@
 (defpackage :infix-math/test
-  (:use :cl :infix-math :infix-math/symbols :fiveam)
-  (:shadow :<*> :choose :√ :?))
+  (:use :cl :infix-math :infix-math/symbols :fiveam :serapeum)
+  (:shadow :<*> :choose :√ :? :1/))
 (in-package :infix-math/test)
 
 (def-suite infix-math)
@@ -89,8 +89,27 @@ name with dots."
 
 (declare-unary-operator √)
 
-(declare-binary-operator <*> :from *)
+(test test-chained-unary-operators ()
+  "Regression: chained unary operators should parse correctly."
+  (is (equal (macroexpand '($ (- √ 5))) '(- (√ 5)))))
+
+(test test-parenthesized-unary-operator-precedence ()
+  "Regression: priority should be preserved for parenthesized unary operators."
+  (is (equal* (macroexpand '($ √ 5 + 1))
+              (macroexpand '($ (√ 5 + 1)))
+              '(+ (√ 5) 1))))
+
+(declare-binary-operator <_> :from *)
 
 (declare-binary-operator ?
   :from *
   :right-associative t)
+
+(defun 1/ (x)
+  (/ x))
+
+(declare-unary-operator 1/)
+
+(test test-allow-1/-as-unary-operator ()
+  "1/ as a unary operator should be parseable."
+  (is (= (/ 5) ($ 1/ 5))))
