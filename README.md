@@ -72,7 +72,7 @@ Parentheses can be used for grouping.
 Variables can be written with literal numbers as coefficients.
 
     ($ 2x)  => 10
-    ($ -2x) => 10
+    ($ -2x) => -10
 
 Literal coefficients have very high priority.
 
