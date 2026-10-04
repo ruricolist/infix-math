@@ -52,6 +52,13 @@
   (when stack
     (dolist (op stack)
       (nodef tree op)))
+  (when (cdr tree)
+    ;; For clarity, we use `*print-length*' to force sublists to print as `(...)'.
+    (let ((*print-length* 0))
+      (error "Infix parsing error on: ~{~A~^ ~}~@
+              This can happen when you call a function that has not been declared~@
+              as a unary operator, without parenthesizing the call."
+	     expression)))
   (car tree))
 
 (defun valid? (expression)

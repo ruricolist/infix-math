@@ -113,3 +113,10 @@ name with dots."
 (test test-allow-1/-as-unary-operator ()
   "1/ as a unary operator should be parseable."
   (is (= (/ 5) ($ 1/ 5))))
+
+(test test-syntax-error-0
+  (signals error (macroexpand '($ foo x))))
+
+(test test-syntax-error-1
+  (signals error (macroexpand '($ 1 + foo x))))
+
