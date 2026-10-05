@@ -15,6 +15,10 @@
   (is (= ($ 2 + 2) 4))
   (is (= ($ 1 + 2 * 3)) 7))
 
+(test test-minus
+  (is (= ($ 7 - 3) 4))
+  (is (= ($ - 3 - 1) -4)))
+
 (test test-paren-descent ()
   "Parentheses should be descended into during parsing."
   (let ((p 1))
