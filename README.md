@@ -141,6 +141,11 @@ You can use infix subexpressions for the arguments:
 
     ($ (complex 1.0 (2.0 * x))) ≡ (complex 1.0 (* 2.0 x))
 
+If the function takes a single argument, you can supply it with an
+unparenthesized infix expression:
+
+    ($ (tanh x + 1)) ≡ (tanh (+ x 1))
+
 Function calls have the lowest possible precedence, even lower than
 `over`:
 
