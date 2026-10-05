@@ -46,7 +46,7 @@ forms are assumed to be pure. Math does not have side effects.
 Infix-Math knows about the following arithmetic and bitwise operators,
 in descending order of precedence.
 
-- unary -, sqrt (√)
+- unary -, √
 - expt (^), log
 - *, /, rem, mod, floor, ffloor, ceiling, fceiling, truncate,
   ftruncate, round, fround, scale-float, gcd, lcm, atan
@@ -159,7 +159,7 @@ possible precedence:
 Also, unary operators do not need to be parenthesized, but if you omit
 the parentheses around a function call, you will get a syntax error:
 
-    ($ 1 + √ x) ≡ (+ 1 (sqrt x))
+    ($ 1 + √ x) ≡ (+ 1 (√ x))
     ($ 1 + tanh x) --> error
 
 ## Calculator
@@ -253,7 +253,7 @@ To declare an operator right-associative:
 We recommend _against_ declaring CL builtins as operators, beyond the
 ones predefined by this library, because the effect of such a
 declaration is global.  In a hypothetical future in which this library
-is widely used, one client could expect to use `log`, for instance, as
+is widely used, one client could expect to use `cos`, for instance, as
 a function, while another might declare it as a unary operator; if
 they were loaded together, the latter might break the former.
 
