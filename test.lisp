@@ -120,3 +120,5 @@ name with dots."
 (test test-syntax-error-1
   (signals error (macroexpand '($ 1 + foo x))))
 
+(test test-syntax-error-2
+  (signals error (macroexpand '($ 1 √ 2))))
