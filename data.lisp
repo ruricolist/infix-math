@@ -10,6 +10,7 @@
    :trim-dotted-operator
    :precedence
    :unary?
+   :binary?
    :right-associative?
    :declare-unary-operator
    :declare-binary-operator))
@@ -108,7 +109,8 @@
                         (right-associative
                          (right-associative? from)))
   (setf (precedence name) (precedence from)
-        (right-associative? name) right-associative))
+        (right-associative? name) right-associative
+        (binary? name) t))
 
 (defun save-unary-operator (name)
   (setf (precedence name) 0
@@ -147,3 +149,14 @@
   (if value
       (pushnew operator *unary*)
       (removef *unary* operator)))
+
+(defparameter *binary*
+  (remove 'unary (reduce #'append *order-of-operations*)))
+
+(defun binary? (operator)
+  (member operator *binary*))
+
+(defun (setf binary?) (value operator)
+  (if value
+      (pushnew operator *binary*)
+      (removef *binary* operator)))

@@ -38,11 +38,16 @@
     (dolist (token expression)
       (if (operator? token)
           (progn
-            (when (and (unary? token)
-                       (or (eq last-token :start)
-                           (operator? last-token)))
-              (push token tree)
-              (setf token 'unary))
+            (when (unary? token)
+              (if (or (eq last-token :start)
+                      (operator? last-token))
+                  (progn
+                    (push token tree)
+                    (setf token 'unary))
+                  (unless (binary? token)
+                    (error "Infix parsing error on: ~{~A~^ ~}~@
+                            Unary operator `~A' appears in non-unary context"
+                           expression token))))
             (loop while (and stack (not (eq token 'unary))
                              (precedence> token (car stack)))
                   do (nodef tree (pop stack))
@@ -58,7 +63,7 @@
       (error "Infix parsing error on: ~{~A~^ ~}~@
               This can happen when you call a function that has not been declared~@
               as a unary operator, without parenthesizing the call."
-	     expression)))
+             expression)))
   (car tree))
 
 (defun valid? (expression)
