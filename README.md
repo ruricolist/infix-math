@@ -46,24 +46,26 @@ forms are assumed to be pure. Math does not have side effects.
 Infix-Math knows about the following arithmetic and bitwise operators,
 in descending order of precedence.
 
-- unary -, sqrt
-- expt, log
+- unary -, √
+- expt (^), log
 - *, /, rem, mod, floor, ffloor, ceiling, fceiling, truncate,
   ftruncate, round, fround, scale-float, gcd, lcm, atan
 - +, -
-- ash
+- ash (<<, >>)
 - logand, logandc1, logandc2, lognand
 - logxor, logeqv
 - logior, logorc1, logorc2, lognor
 - min, max
 - over
 
-Operations at the same level of precedence are always evaluated
-left-to-right.
+Operations at the same level of precedence are evaluated
+left-to-right, except for operators declared right-associative; by
+default, these are `expt` and its synonym `^`.
 
     (+ 0.1d0 (+ 0.2d0 0.3d0)) => 0.6d0
     (+ (+ 0.1d0 0.2d0) 0.3d0) => 0.6000000000000001D0
     ($ 0.1d0 + 0.2d0 + 0.3d0) => 0.6000000000000001D0
+    ($ 2 ^ 2 ^ 3) => 256 (i.e. 2^8, not 4^3)
 
 Parentheses can be used for grouping.
 
@@ -74,7 +76,7 @@ Variables can be written with literal numbers as coefficients.
     ($ 2x)  => 10
     ($ -2x) => -10
 
-Literal coefficients have very high priority.
+Literal coefficients have very high precedence.
 
     ($ 2 ^ 2 * x) ≡ (* (expt 2 2) x)     => 20
     ($ 2 ^ 2x)    ≡ (expt 2 (* 2 x))     => 1024
@@ -94,7 +96,7 @@ You can also use fractions as literal coefficients.
 Among other things, literal coefficients are very convenient for units
 of measurement.
 
-(The idea for literal coefficients comes from Julia.)
+(The idea for literal coefficients comes from [Julia][].)
 
 ## Symbols
 
@@ -109,7 +111,7 @@ The symbol `^` is just a shorthand for `expt`.
 (`^` is from Dylan.)
 
 The symbol `over` represents the same operation as `/`, but at a much
-lower priority. Using `over` lets you avoid introducing parentheses
+lower precedence. Using `over` lets you avoid introducing parentheses
 for grouping when transcribing fractions.
 
     (setf x 5)
@@ -126,6 +128,39 @@ You can also spell `over` with a series of dashes or underscores.
 
 If you want more math symbols, the package `infix-math/symbols`
 provides a few more.
+
+## Other functions
+
+You can call any Lisp function from within an infix expression; it
+doesn't need to be declared as an operator.  Just parenthesize the
+call as usual in Lisp:
+
+    ($ 3 * (complex 1.0 x)) ≡ (* 3 (complex 1.0 x))
+
+You can use infix subexpressions for the arguments:
+
+    ($ (complex 1.0 (2.0 * x))) ≡ (complex 1.0 (* 2.0 x))
+
+If the function takes a single argument, you can supply it with an
+unparenthesized infix expression:
+
+    ($ (tanh x + 1)) ≡ (tanh (+ x 1))
+
+Function calls have the lowest possible precedence, even lower than
+`over`:
+
+    ($ (tanh x + 1 over y)) ≡ (tanh (/ (+ 1 x) y))
+
+Note the contrast with unary operators, which have the highest
+possible precedence:
+
+    ($ (√ x + 1 over y)) ≡ (/ (+ (√ x) 1) y)
+
+Also, unary operators do not need to be parenthesized, but if you omit
+the parentheses around a function call, you will get a syntax error:
+
+    ($ 1 + √ x) ≡ (+ 1 (√ x))
+    ($ 1 + tanh x) --> error
 
 ## Calculator
 
@@ -173,9 +208,9 @@ Infix-Math is easily to extend. In fact, you may not even need to
 extend it.
 
 Any symbol that consists entirely of operator characters is
-interpreted as an infix operator, with the highest non-unary priority.
-Operator characters are anything but dashes, underscores, whitespace
-or alphanumeric characters.
+interpreted as an infix operator, with the highest non-unary
+precedence.  Operator characters are anything but dashes, underscores,
+whitespace or alphanumeric characters.
 
     (defun <*> (x y)
       "Matrix multiplication, maybe."
@@ -214,6 +249,13 @@ To declare an operator right-associative:
     (declare-binary-operator ?
       :from *
       :right-associative t)
+
+We recommend _against_ declaring CL builtins as operators, beyond the
+ones predefined by this library, because the effect of such a
+declaration is global.  In a hypothetical future in which this library
+is widely used, one client could expect to use `cos`, for instance, as
+a function, while another might declare it as a unary operator; if
+they were loaded together, the latter might break the former.
 
 [FMA]: https://en.wikipedia.org/wiki/Fused_multiply%E2%80%93add
 [Julia]: http://julialang.org

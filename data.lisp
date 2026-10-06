@@ -138,7 +138,7 @@
       (removef *right-associative* operator)))
 
 (defparameter *unary*
-  '(- sqrt √))
+  '(- √))
 
 (defun unary? (operator)
   (member operator *unary*))
